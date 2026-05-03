@@ -1,61 +1,90 @@
 <!DOCTYPE html>
-<html>
+<html lang="nl">
 <head>
-    <meta charset="utf-8">
-    <title>Roparun Live Kaart - Frankrijk 2026 V3</title>
+    <title>Roparun 2026 Live Route - RTV Lansingerland</title>
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-plugins/3.4.0/layer/vector/KML.js"></script>
-
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        body { margin:0; padding:0; overflow: hidden; }
-        #map { height:100vh; width:100vw; background: #f0f0f0; }
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100%; }
+        
+        /* Container voor de info blokken linksonder */
+        .info-container {
+            position: absolute;
+            bottom: 40px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 270px;
+        }
+
+        .info-box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.4;
+        }
+
+        /* Locatie Box */
+        .location-box { font-size: 15px; }
+        #location-text { display: block; font-weight: 800; font-size: 21px; margin-top: 4px; color: #000; }
+
+        /* Afstand Box */
+        .distance-box { font-size: 15px; border-left: 5px solid #d32f2f; }
+        #distance-text { display: block; font-weight: 800; font-size: 21px; margin-top: 4px; color: #000; }
+
+        /* Legenda Box */
+        .legend-box { font-size: 14px; }
+        .legend-box strong { font-size: 16px; display: block; margin-bottom: 8px; }
+        .legend-box i { width: 18px; height: 18px; float: left; margin-right: 10px; border-radius: 4px; border: 1px solid #ccc; }
+        .legend-item { clear: both; display: flex; align-items: center; margin-bottom: 5px; }
     </style>
 </head>
-
 <body>
+
 <div id="map"></div>
 
-<script id="kml-data" type="application/xml">
-<kml xmlns="http://www.opengis.net/kml/2.2">
-  <Document>
-    <name>Roparun Frankrijk 2026 V3</name>
-    <Style id="routeLine">
-      <LineStyle><color>ff0000ff</color><width>5</width></LineStyle>
-    </Style>
-    <!-- De Route Lijn -->
-    <Placemark>
-      <name>Route Frankrijk - Rotterdam</name>
-      <styleUrl>#routeLine</styleUrl>
-      <LineString>
-        <tessellate>1</tessellate>
-        <coordinates>
-          3.224492,49.758974 3.381547,49.975993 3.547701,50.228917 3.686302,50.435082 3.862259,50.735927 
-          3.890357,50.772437 4.168688,50.971928 4.32005,51.175448 4.674281,51.473727 4.951594,51.618528 
-          4.585107,51.581697 4.333238,51.42308 4.363908,51.629111 4.536657,51.841368 4.536426,51.856287 
-          4.492581,51.908626 4.478921,51.922512
-        </coordinates>
-      </LineString>
-    </Placemark>
-    <!-- Checkpoints -->
-    <Folder>
-      <name>Checkpoints</name>
-      <Placemark><name>0.0 km - Start Clastres</name><Point><coordinates>3.224492,49.758974</coordinates></Point></Placemark>
-      <Placemark><name>33.5 km - CP 02 Brancourt</name><Point><coordinates>3.381547,49.975993</coordinates></Point></Placemark>
-      <Placemark><name>150.5 km - CP 05 Lessines</name><Point><coordinates>3.862259,50.735927</coordinates></Point></Placemark>
-      <Placemark><name>289.8 km - CP 08 Zundert</name><Point><coordinates>4.674281,51.473727</coordinates></Point></Placemark>
-      <Placemark><name>511.6 km - Finish Rotterdam</name><Point><coordinates>4.478921,51.922512</coordinates></Point></Placemark>
-    </Folder>
-  </Document>
-</kml>
-</script>
+<div class="info-container">
+    <!-- Locatie -->
+    <div class="info-box location-box">
+        De omroep bus is nu in:
+        <span id="location-text">Laden...</span>
+    </div>
+
+    <!-- Afstand -->
+    <div class="info-box distance-box">
+        Nog tot de finish:
+        <span id="distance-text">Berekenen...</span>
+    </div>
+
+    <!-- Legenda -->
+    <div class="info-box legend-box">
+        <strong>Roparun 2026 Route</strong>
+        <div class="legend-item">
+            <i style="background: #0000FF"></i> Lopers Route
+        </div>
+        <div class="legend-item">
+            <i style="background: #00FF00"></i> Bus Route
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+    // Firebase Configuratie
     const firebaseConfig = {
         apiKey: "AIzaSyD7VX_nSWE5L_1296A1QfSYbxwesS3T7Do",
         authDomain: "roparun-tracker.firebaseapp.com",
@@ -70,121 +99,70 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    var map = L.map('map', { zoomControl: true }).setView([50.8, 4.0], 7); 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    // Finish coördinaten (Coolsingel, Rotterdam)
+    const finishLatLng = L.latLng(51.922512, 4.478921);
 
-    try {
-        const kmlText = document.getElementById('kml-data').innerHTML;
-        const parser = new DOMParser();
-        const kml = parser.parseFromString(kmlText, 'text/xml');
-        const track = new L.KML(kml);
-        map.addLayer(track);
-        
-        // Optioneel: Automatisch zoomen naar de route bij het laden
-        track.on("add", function() {
-            map.fitBounds(track.getBounds());
-        });
-    } catch (e) {
-        console.error("Fout bij laden route:", e);
-    }
+    // Initialiseer kaart zonder zoom-knoppen
+    const map = L.map('map', { zoomControl: false }).setView([51.5, 3.5], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
 
-    var busIcon = L.icon({
-        iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
-        iconSize: [40, 40],
-        iconAnchor: [20, 20]
-    });
-
-    var marker = L.marker([0, 0], {icon: busIcon}).addTo(map);
-
-    db.ref("bus").on("value", function(snapshot) {
-        var data = snapshot.val();
-        if(data && data.lat && data.lng){
-            var latlng = [data.lat, data.lng];
-            marker.setLatLng(latlng);
-        }
-    });
-</script>
-</body>
-</html>      <Placemark><name>150.5 km - CP 05 Lessines</name><Point><coordinates>3.862259,50.735927</coordinates></Point></Placemark>
-      <Placemark><name>158.1 km - Doorkomst Geraardsbergen</name><Point><coordinates>3.890357,50.772437</coordinates></Point></Placemark>
-      <Placemark><name>200.9 km - CP 06 Opwijk</name><Point><coordinates>4.168688,50.971928</coordinates></Point></Placemark>
-      <Placemark><name>238.5 km - CP 07 Kruibeke</name><Point><coordinates>4.32005,51.175448</coordinates></Point></Placemark>
-      <Placemark><name>289.8 km - CP 08 Zundert</name><Point><coordinates>4.674281,51.473727</coordinates></Point></Placemark>
-      <Placemark><name>325.4 km - CP 09 Dongen</name><Point><coordinates>4.951594,51.618528</coordinates></Point></Placemark>
-      <Placemark><name>365.0 km - CP 10 Hoeven</name><Point><coordinates>4.585107,51.581697</coordinates></Point></Placemark>
-      <Placemark><name>407.1 km - CP 11 Hoogerheide</name><Point><coordinates>4.333238,51.42308</coordinates></Point></Placemark>
-      <Placemark><name>443.0 km - CP 12 Dinteloord</name><Point><coordinates>4.363908,51.629111</coordinates></Point></Placemark>
-      <Placemark><name>489.5 km - Samenvoeging NL &amp; FR</name><Point><coordinates>4.536657,51.841368</coordinates></Point></Placemark>
-      <Placemark><name>493.1 km - CP 13 Barendrecht</name><Point><coordinates>4.536426,51.856287</coordinates></Point></Placemark>
-      <Placemark><name>507.7 km - CP 14 Wilhelminaplein</name><Point><coordinates>4.492581,51.908626</coordinates></Point></Placemark>
-      <Placemark><name>511.6 km - CP 15 Coolsingel (FINISH)</name><Point><coordinates>4.478921,51.922512</coordinates></Point></Placemark>
-    </Folder>
-  </Document>
-</kml>
-</script>
-
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyD7VX_nSWE5L_1296A1QfSYbxwesS3T7Do",
-        authDomain: "roparun-tracker.firebaseapp.com",
-        databaseURL: "https://roparun-tracker-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "roparun-tracker",
-        storageBucket: "roparun-tracker.firebasestorage.app",
-        messagingSenderId: "1066019618899",
-        appId: "1:1066019618899:web:c6fe8e0b313e88912306a6",
-        measurementId: "G-5ZC7JH1904"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    var map = L.map('map', {
-        zoomControl: true, 
-        attributionControl: false 
-    }).setView([51.5, 3.5], 8); 
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-    /* --- ROUTE LADEN UIT HET DOCUMENT --- */
-    try {
-        const kmlText = document.getElementById('kml-data').innerHTML;
-        const parser = new DOMParser();
-        const kml = parser.parseFromString(kmlText, 'text/xml');
-        const track = new L.KML(kml);
-        map.addLayer(track);
-        
-        // Zorg dat de markers ook getoond worden
-        track.on("add", function() {
-            console.log("Route en markers geladen.");
-        });
-
-    } catch (e) {
-        console.error("KML kon niet worden geladen:", e);
-    }
-
+    // Bus Icoon & Marker
     var busIcon = L.icon({
         iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
         iconSize: [50, 50],
         iconAnchor: [25, 25]
     });
 
-    var marker = L.marker([0, 0], {icon: busIcon}).addTo(map);
-    var firstLoad = true;
+    var busMarker = L.marker([0, 0], {icon: busIcon}).addTo(map);
 
+    // Adres ophalen
+    async function updateAddress(lat, lng) {
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
+            const data = await response.json();
+            const city = data.address.city || data.address.town || data.address.village || data.address.municipality || "Onderweg...";
+            document.getElementById('location-text').innerText = city;
+        } catch (error) { console.error("Adres service niet bereikbaar"); }
+    }
+
+    // Live Firebase Updates
     db.ref("bus").on("value", function(snapshot) {
         var data = snapshot.val();
         if(data && data.lat && data.lng){
-            var latlng = [data.lat, data.lng];
-            marker.setLatLng(latlng);
+            var currentPos = L.latLng(data.lat, data.lng);
+            
+            // Verplaats marker & Volg bus
+            busMarker.setLatLng(currentPos);
+            map.setView(currentPos, map.getZoom(), { animate: true });
 
-            if(firstLoad) {
-                map.setView(latlng, 10, { animate: true });
-                firstLoad = false;
-            } else {
-                map.panTo(latlng, { animate: true, duration: 1.0 });
-            }
+            // Update Plaatsnaam
+            updateAddress(data.lat, data.lng);
+
+            // Update Afstand
+            var distance = currentPos.distanceTo(finishLatLng) / 1000;
+            document.getElementById('distance-text').innerText = distance.toFixed(1) + " km";
         }
     });
+
+    // GeoJSON Route inladen (zonder pionnen)
+    fetch('https://patrickvuffelen.github.io/roparun/map.geojson')
+        .then(response => response.json())
+        .then(data => {
+            L.geoJSON(data, {
+                filter: function(feature) { return feature.geometry.type !== 'Point'; },
+                style: function(feature) {
+                    return { 
+                        color: feature.properties.stroke || '#FF0000', 
+                        weight: 5, 
+                        opacity: 0.8,
+                        lineJoin: 'round'
+                    };
+                }
+            }).addTo(map);
+        });
 </script>
+
 </body>
 </html>
