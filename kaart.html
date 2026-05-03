@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Roparun Live Kaart - Ingebouwde Route</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    
+    <!-- Plugin om KML tekst te verwerken -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-plugins/3.4.0/layer/vector/KML.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        body { margin:0; padding:0; overflow: hidden; }
+        #map { height:100vh; width:100vw; background: #f0f0f0; }
+    </style>
+</head>
+
+<body>
+<div id="map"></div>
+
+<!-- We verstoppen de KML data in dit onzichtbare blokje -->
+<script id="kml-data" type="application/xml">
+<!-- PLAK HIER DE VOLLEDIGE INHOUD VAN JE KML BESTAND -->
+</script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyD7VX_nSWE5L_1296A1QfSYbxwesS3T7Do",
+        authDomain: "roparun-tracker.firebaseapp.com",
+        databaseURL: "https://roparun-tracker-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "roparun-tracker",
+        storageBucket: "roparun-tracker.firebasestorage.app",
+        messagingSenderId: "1066019618899",
+        appId: "1:1066019618899:web:c6fe8e0b313e88912306a6",
+        measurementId: "G-5ZC7JH1904"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    var map = L.map('map', {
+        zoomControl: false, 
+        attributionControl: false 
+    }).setView([51.5, 3.5], 8); 
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    /* --- ROUTE LADEN UIT HET DOCUMENT ZELF --- */
+    try {
+        const kmlText = document.getElementById('kml-data').innerHTML;
+        const parser = new DOMParser();
+        const kml = parser.parseFromString(kmlText, 'text/xml');
+        const track = new L.KML(kml);
+        map.addLayer(track);
+        track.setStyle({color: '#FF00FF', weight: 5});
+    } catch (e) {
+        console.error("KML kon niet worden geladen uit het script-blok:", e);
+    }
+
+    var busIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
+        iconSize: [50, 50],
+        iconAnchor: [25, 25]
+    });
+
+    var marker = L.marker([0, 0], {icon: busIcon}).addTo(map);
+    var firstLoad = true;
+
+    db.ref("bus").on("value", function(snapshot) {
+        var data = snapshot.val();
+        if(data && data.lat && data.lng){
+            var latlng = [data.lat, data.lng];
+            marker.setLatLng(latlng);
+
+            if(firstLoad) {
+                map.setView(latlng, 10, { animate: true });
+                firstLoad = false;
+            } else {
+                map.panTo(latlng, { animate: true, duration: 1.0 });
+            }
+        }
+    });
+</script>
+</body>
+</html>
