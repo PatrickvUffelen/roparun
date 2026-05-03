@@ -5,7 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
@@ -13,6 +16,7 @@
         body { margin: 0; padding: 0; background: #f0f0f0; }
         #map { height: 100vh; width: 100%; }
         
+        /* Container voor de info blokken linksonder */
         .info-container {
             position: absolute;
             bottom: 40px; 
@@ -31,7 +35,7 @@
             box-shadow: 0 6px 20px rgba(0,0,0,0.3);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.5;
-            /* Groene rand links voor alle boxen */
+            /* Uniforme groene rand aan de linkerzijde */
             border-left: 8px solid #3a861d;
         }
 
@@ -89,251 +93,6 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyD7VX_nSWE5L_1296A1QfSYbxwesS3T7Do",
-        authDomain: "roparun-tracker.firebaseapp.com",
-        databaseURL: "https://roparun-tracker-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "roparun-tracker",
-        storageBucket: "roparun-tracker.firebasestorage.app",
-        messagingSenderId: "1066019618899",
-        appId: "1:1066019618899:web:c6fe8e0b313e88912306a6",
-        measurementId: "G-5ZC7JH1904"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const finishLatLng = L.latLng(51.922512, 4.478921);
-
-    const map = L.map('map', { zoomControl: false }).setView([51.5, 3.5], 12);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
-
-    var finishIcon = L.icon({
-        iconUrl: 'https://cdn-icons-png.flaticon.com/512/4744/4744812.png', 
-        iconSize: [60, 60],
-        iconAnchor: [10, 60]
-    });
-    L.marker(finishLatLng, {icon: finishIcon}).addTo(map);
-
-    var busIcon = L.icon({
-        iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
-        iconSize: [80, 80],      
-        iconAnchor: [40, 80]     
-    });
-
-    var busMarker = L.marker([0, 0], {icon: busIcon}).addTo(map);
-
-    async function updateAddress(lat, lng) {
-        try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
-            const data = await response.json();
-            const city = data.address.city || data.address.town || data.address.village || data.address.municipality || "Onderweg...";
-            document.getElementById('location-text').innerText = city;
-        } catch (error) { console.error("Adres service niet bereikbaar"); }
-    }
-
-    db.ref("bus").on("value", function(snapshot) {
-        var data = snapshot.val();
-        if(data && data.lat && data.lng){
-            var currentPos = L.latLng(data.lat, data.lng);
-            busMarker.setLatLng(currentPos);
-            map.setView(currentPos, map.getZoom(), { animate: true });
-            updateAddress(data.lat, data.lng);
-            var distance = currentPos.distanceTo(finishLatLng) / 1000;
-            document.getElementById('distance-text').innerText = distance.toFixed(1) + " km";
-        }
-    });
-
-    fetch('https://patrickvuffelen.github.io/roparun/map.geojson')
-        .then(response => response.json())
-        .then(data => {
-            L.geoJSON(data, {
-                filter: function(feature) { return feature.geometry.type !== 'Point'; },
-                style: function(feature) {
-                    return { color: feature.properties.stroke || '#FF0000', weight: 5, opacity: 0.8, lineJoin: 'round' };
-                }
-            }).addTo(map);
-        });
-</script>
-
-</body>
-</html>            line-height: 1.5;
-        }
-
-        /* Locatie Box */
-        .location-box { font-size: 18px; }
-        #location-text { display: block; font-weight: 800; font-size: 26px; margin-top: 6px; color: #000; }
-
-        /* Afstand Box */
-        .distance-box { font-size: 18px; border-left: 6px solid #d32f2f; }
-        #distance-text { display: block; font-weight: 800; font-size: 26px; margin-top: 6px; color: #000; }
-
-        /* LEGENDA GROTER GEMAAKT */
-        .legend-box { font-size: 18px; }
-        .legend-box strong { font-size: 22px; display: block; margin-bottom: 12px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
-        .legend-box i { 
-            width: 24px; 
-            height: 24px; 
-            float: left; 
-            margin-right: 15px; 
-            border-radius: 4px; 
-            border: 1px solid #ccc; 
-        }
-        .legend-item { 
-            clear: both; 
-            display: flex; 
-            align-items: center; 
-            margin-bottom: 10px; 
-            font-weight: 600;
-        }
-    </style>
-</head>
-<body>
-
-<div id="map"></div>
-
-<div class="info-container">
-    <!-- Locatie -->
-    <div class="info-box location-box">
-        De omroep bus is nu in:
-        <span id="location-text">Laden...</span>
-    </div>
-
-    <!-- Afstand -->
-    <div class="info-box distance-box">
-        Nog tot de finish:
-        <span id="distance-text">Berekenen...</span>
-    </div>
-
-    <!-- Legenda -->
-    <div class="info-box legend-box">
-        <strong>Roparun 2026 Route</strong>
-        <div class="legend-item">
-            <i style="background: #0000FF"></i> Lopers Route
-        </div>
-        <div class="legend-item">
-            <i style="background: #00FF00"></i> Bus Route
-        </div>
-    </div>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyD7VX_nSWE5L_1296A1QfSYbxwesS3T7Do",
-        authDomain: "roparun-tracker.firebaseapp.com",
-        databaseURL: "https://roparun-tracker-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "roparun-tracker",
-        storageBucket: "roparun-tracker.firebasestorage.app",
-        messagingSenderId: "1066019618899",
-        appId: "1:1066019618899:web:c6fe8e0b313e88912306a6",
-        measurementId: "G-5ZC7JH1904"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    const finishLatLng = L.latLng(51.922512, 4.478921);
-
-    const map = L.map('map', { zoomControl: false }).setView([51.5, 3.5], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
-
-    var busIcon = L.icon({
-        iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
-        iconSize: [50, 50],
-        iconAnchor: [25, 25]
-    });
-
-    var busMarker = L.marker([0, 0], {icon: busIcon}).addTo(map);
-
-    async function updateAddress(lat, lng) {
-        try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
-            const data = await response.json();
-            const city = data.address.city || data.address.town || data.address.village || data.address.municipality || "Onderweg...";
-            document.getElementById('location-text').innerText = city;
-        } catch (error) { console.error("Adres service niet bereikbaar"); }
-    }
-
-    db.ref("bus").on("value", function(snapshot) {
-        var data = snapshot.val();
-        if(data && data.lat && data.lng){
-            var currentPos = L.latLng(data.lat, data.lng);
-            busMarker.setLatLng(currentPos);
-            map.setView(currentPos, map.getZoom(), { animate: true });
-            updateAddress(data.lat, data.lng);
-            var distance = currentPos.distanceTo(finishLatLng) / 1000;
-            document.getElementById('distance-text').innerText = distance.toFixed(1) + " km";
-        }
-    });
-
-    fetch('https://patrickvuffelen.github.io/roparun/map.geojson')
-        .then(response => response.json())
-        .then(data => {
-            L.geoJSON(data, {
-                filter: function(feature) { return feature.geometry.type !== 'Point'; },
-                style: function(feature) {
-                    return { color: feature.properties.stroke || '#FF0000', weight: 5, opacity: 0.8, lineJoin: 'round' };
-                }
-            }).addTo(map);
-        });
-</script>
-
-</body>
-</html>            line-height: 1.4;
-        }
-
-        /* Locatie Box */
-        .location-box { font-size: 15px; }
-        #location-text { display: block; font-weight: 800; font-size: 21px; margin-top: 4px; color: #000; }
-
-        /* Afstand Box */
-        .distance-box { font-size: 15px; border-left: 5px solid #d32f2f; }
-        #distance-text { display: block; font-weight: 800; font-size: 21px; margin-top: 4px; color: #000; }
-
-        /* Legenda Box */
-        .legend-box { font-size: 14px; }
-        .legend-box strong { font-size: 16px; display: block; margin-bottom: 8px; }
-        .legend-box i { width: 18px; height: 18px; float: left; margin-right: 10px; border-radius: 4px; border: 1px solid #ccc; }
-        .legend-item { clear: both; display: flex; align-items: center; margin-bottom: 5px; }
-    </style>
-</head>
-<body>
-
-<div id="map"></div>
-
-<div class="info-container">
-    <!-- Locatie -->
-    <div class="info-box location-box">
-        De omroep bus is nu in:
-        <span id="location-text">Laden...</span>
-    </div>
-
-    <!-- Afstand -->
-    <div class="info-box distance-box">
-        Nog tot de finish:
-        <span id="distance-text">Berekenen...</span>
-    </div>
-
-    <!-- Legenda -->
-    <div class="info-box legend-box">
-        <strong>Roparun 2026 Route</strong>
-        <div class="legend-item">
-            <i style="background: #0000FF"></i> Lopers Route
-        </div>
-        <div class="legend-item">
-            <i style="background: #00FF00"></i> Bus Route
-        </div>
-    </div>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script>
     // Firebase Configuratie
     const firebaseConfig = {
         apiKey: "AIzaSyD7VX_nSWE5L_1296A1QfSYbxwesS3T7Do",
@@ -348,22 +107,32 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
     const finishLatLng = L.latLng(51.922512, 4.478921);
 
+    // Kaart instellen
     const map = L.map('map', { zoomControl: false }).setView([51.5, 3.5], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
+    // Finishvlag (jouw gekozen vlag)
+    var finishIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/4744/4744812.png', 
+        iconSize: [60, 60],
+        iconAnchor: [10, 60] 
+    });
+    L.marker(finishLatLng, {icon: finishIcon}).addTo(map);
+
+    // Bus Icoon
     var busIcon = L.icon({
         iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
-        iconSize: [50, 50],
-        iconAnchor: [25, 25]
+        iconSize: [80, 80],      
+        iconAnchor: [40, 80]     
     });
 
     var busMarker = L.marker([0, 0], {icon: busIcon}).addTo(map);
 
+    // Adres omzetten naar plaatsnaam
     async function updateAddress(lat, lng) {
         try {
             const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
@@ -373,6 +142,7 @@
         } catch (error) { console.error("Adres service niet bereikbaar"); }
     }
 
+    // Live updates uit Firebase
     db.ref("bus").on("value", function(snapshot) {
         var data = snapshot.val();
         if(data && data.lat && data.lng){
@@ -385,16 +155,26 @@
         }
     });
 
-    fetch('https://patrickvuffelen.github.io/roparun/map.geojson')
-        .then(response => response.json())
+    // Route laden via relatief pad voor GitHub Pages compatibiliteit
+    fetch('map.geojson')
+        .then(response => {
+            if (!response.ok) throw new Error("GeoJSON niet gevonden");
+            return response.json();
+        })
         .then(data => {
             L.geoJSON(data, {
                 filter: function(feature) { return feature.geometry.type !== 'Point'; },
                 style: function(feature) {
-                    return { color: feature.properties.stroke || '#FF0000', weight: 5, opacity: 0.8, lineJoin: 'round' };
+                    return { 
+                        color: feature.properties.stroke || '#FF0000', 
+                        weight: 7, 
+                        opacity: 1.0, 
+                        lineJoin: 'round' 
+                    };
                 }
             }).addTo(map);
-        });
+        })
+        .catch(err => console.error("Fout bij laden route:", err));
 </script>
 
 </body>
