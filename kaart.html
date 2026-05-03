@@ -19,8 +19,8 @@
         /* Container voor de info blokken linksonder */
         .info-container {
             position: absolute;
-            bottom: 40px;
-            left: 20px;
+            bottom: 40px; /* Afstand van de onderkant */
+            left: 40px;   /* Afstand van de linkerkant */
             z-index: 1000;
             display: flex;
             flex-direction: column;
@@ -99,16 +99,13 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Finish coördinaten (Coolsingel, Rotterdam)
     const finishLatLng = L.latLng(51.922512, 4.478921);
 
-    // Initialiseer kaart zonder zoom-knoppen
     const map = L.map('map', { zoomControl: false }).setView([51.5, 3.5], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Bus Icoon & Marker
     var busIcon = L.icon({
         iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
         iconSize: [50, 50],
@@ -117,7 +114,6 @@
 
     var busMarker = L.marker([0, 0], {icon: busIcon}).addTo(map);
 
-    // Adres ophalen
     async function updateAddress(lat, lng) {
         try {
             const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
@@ -127,38 +123,25 @@
         } catch (error) { console.error("Adres service niet bereikbaar"); }
     }
 
-    // Live Firebase Updates
     db.ref("bus").on("value", function(snapshot) {
         var data = snapshot.val();
         if(data && data.lat && data.lng){
             var currentPos = L.latLng(data.lat, data.lng);
-            
-            // Verplaats marker & Volg bus
             busMarker.setLatLng(currentPos);
             map.setView(currentPos, map.getZoom(), { animate: true });
-
-            // Update Plaatsnaam
             updateAddress(data.lat, data.lng);
-
-            // Update Afstand
             var distance = currentPos.distanceTo(finishLatLng) / 1000;
             document.getElementById('distance-text').innerText = distance.toFixed(1) + " km";
         }
     });
 
-    // GeoJSON Route inladen (zonder pionnen)
     fetch('https://patrickvuffelen.github.io/roparun/map.geojson')
         .then(response => response.json())
         .then(data => {
             L.geoJSON(data, {
                 filter: function(feature) { return feature.geometry.type !== 'Point'; },
                 style: function(feature) {
-                    return { 
-                        color: feature.properties.stroke || '#FF0000', 
-                        weight: 5, 
-                        opacity: 0.8,
-                        lineJoin: 'round'
-                    };
+                    return { color: feature.properties.stroke || '#FF0000', weight: 5, opacity: 0.8, lineJoin: 'round' };
                 }
             }).addTo(map);
         });
