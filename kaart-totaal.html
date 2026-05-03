@@ -103,7 +103,6 @@
     const db = firebase.database();
     const finishLatLng = L.latLng(51.922512, 4.478921);
 
-    // Kaart zonder zoom-knoppen
     const map = L.map('map', { 
         zoomControl: false,
         dragging: true,
@@ -143,7 +142,6 @@
         if(data && data.lat && data.lng){
             var currentPos = L.latLng(data.lat, data.lng);
             busMarker.setLatLng(currentPos);
-            // Geen automatische camera-volgfunctie meer
             updateAddress(data.lat, data.lng);
             var distance = currentPos.distanceTo(finishLatLng) / 1000;
             document.getElementById('distance-text').innerText = distance.toFixed(1) + " km";
@@ -164,14 +162,9 @@
                     }
                 }).addTo(map);
                 
-                // 1. Zoom eerst uit op de hele route (met kleine padding)
-                map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
-
-                // 2. Zoom direct daarna één stap extra in voor een beter beeld
-                // We doen dit met een kleine vertraging zodat fitBounds klaar is
-                setTimeout(() => {
-                    map.setZoom(map.getBoundsZoom(routeLayer.getBounds()) + 1);
-                }, 100);
+                // Past de kaart aan zodat de hele route precies in beeld komt.
+                // Padding zorgt dat de lijn niet de rand raakt.
+                map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
             });
     }
 
