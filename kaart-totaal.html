@@ -103,7 +103,7 @@
     const db = firebase.database();
     const finishLatLng = L.latLng(51.922512, 4.478921);
 
-    // ZoomControl op false zodat de + en - knoppen weg zijn
+    // Kaart zonder zoom-knoppen
     const map = L.map('map', { 
         zoomControl: false,
         dragging: true,
@@ -143,7 +143,7 @@
         if(data && data.lat && data.lng){
             var currentPos = L.latLng(data.lat, data.lng);
             busMarker.setLatLng(currentPos);
-            // Geen map.setView meer, de camera blijft op de route staan
+            // Geen automatische camera-volgfunctie meer
             updateAddress(data.lat, data.lng);
             var distance = currentPos.distanceTo(finishLatLng) / 1000;
             document.getElementById('distance-text').innerText = distance.toFixed(1) + " km";
@@ -164,8 +164,14 @@
                     }
                 }).addTo(map);
                 
-                // Zoomt automatisch uit om de volledige route in beeld te houden
-                map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+                // 1. Zoom eerst uit op de hele route (met kleine padding)
+                map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+
+                // 2. Zoom direct daarna één stap extra in voor een beter beeld
+                // We doen dit met een kleine vertraging zodat fitBounds klaar is
+                setTimeout(() => {
+                    map.setZoom(map.getBoundsZoom(routeLayer.getBounds()) + 1);
+                }, 100);
             });
     }
 
