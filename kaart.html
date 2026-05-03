@@ -23,9 +23,33 @@
 <body>
 <div id="map"></div>
 
-<!-- We verstoppen de KML data in dit onzichtbare blokje -->
+<!-- De KML data is hieronder ingevoegd inclusief kilometerpunten -->
 <script id="kml-data" type="application/xml">
-<!-- PLAK HIER DE VOLLEDIGE INHOUD VAN JE KML BESTAND -->
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Frankrijk 2026 V3</name>
+    <Folder>
+      <name>Checkpoints</name>
+      <Placemark><name>0.0 km - CP 01 Clastres (START)</name><Point><coordinates>3.224492,49.758974</coordinates></Point></Placemark>
+      <Placemark><name>33.5 km - CP 02 Brancourt-le-Grand</name><Point><coordinates>3.381547,49.975993</coordinates></Point></Placemark>
+      <Placemark><name>70.5 km - CP 03 Escarmain</name><Point><coordinates>3.547701,50.228917</coordinates></Point></Placemark>
+      <Placemark><name>104.7 km - CP 04 Hensies</name><Point><coordinates>3.686302,50.435082</coordinates></Point></Placemark>
+      <Placemark><name>150.5 km - CP 05 Lessines</name><Point><coordinates>3.862259,50.735927</coordinates></Point></Placemark>
+      <Placemark><name>158.1 km - Doorkomst Geraardsbergen</name><Point><coordinates>3.890357,50.772437</coordinates></Point></Placemark>
+      <Placemark><name>200.9 km - CP 06 Opwijk</name><Point><coordinates>4.168688,50.971928</coordinates></Point></Placemark>
+      <Placemark><name>238.5 km - CP 07 Kruibeke</name><Point><coordinates>4.32005,51.175448</coordinates></Point></Placemark>
+      <Placemark><name>289.8 km - CP 08 Zundert</name><Point><coordinates>4.674281,51.473727</coordinates></Point></Placemark>
+      <Placemark><name>325.4 km - CP 09 Dongen</name><Point><coordinates>4.951594,51.618528</coordinates></Point></Placemark>
+      <Placemark><name>365.0 km - CP 10 Hoeven</name><Point><coordinates>4.585107,51.581697</coordinates></Point></Placemark>
+      <Placemark><name>407.1 km - CP 11 Hoogerheide</name><Point><coordinates>4.333238,51.42308</coordinates></Point></Placemark>
+      <Placemark><name>443.0 km - CP 12 Dinteloord</name><Point><coordinates>4.363908,51.629111</coordinates></Point></Placemark>
+      <Placemark><name>489.5 km - Samenvoeging NL &amp; FR</name><Point><coordinates>4.536657,51.841368</coordinates></Point></Placemark>
+      <Placemark><name>493.1 km - CP 13 Barendrecht</name><Point><coordinates>4.536426,51.856287</coordinates></Point></Placemark>
+      <Placemark><name>507.7 km - CP 14 Wilhelminaplein</name><Point><coordinates>4.492581,51.908626</coordinates></Point></Placemark>
+      <Placemark><name>511.6 km - CP 15 Coolsingel (FINISH)</name><Point><coordinates>4.478921,51.922512</coordinates></Point></Placemark>
+    </Folder>
+  </Document>
+</kml>
 </script>
 
 <script>
@@ -44,22 +68,27 @@
     const db = firebase.database();
 
     var map = L.map('map', {
-        zoomControl: false, 
+        zoomControl: true, 
         attributionControl: false 
     }).setView([51.5, 3.5], 8); 
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    /* --- ROUTE LADEN UIT HET DOCUMENT ZELF --- */
+    /* --- ROUTE LADEN UIT HET DOCUMENT --- */
     try {
         const kmlText = document.getElementById('kml-data').innerHTML;
         const parser = new DOMParser();
         const kml = parser.parseFromString(kmlText, 'text/xml');
         const track = new L.KML(kml);
         map.addLayer(track);
-        track.setStyle({color: '#FF00FF', weight: 5});
+        
+        // Zorg dat de markers ook getoond worden
+        track.on("add", function() {
+            console.log("Route en markers geladen.");
+        });
+
     } catch (e) {
-        console.error("KML kon niet worden geladen uit het script-blok:", e);
+        console.error("KML kon niet worden geladen:", e);
     }
 
     var busIcon = L.icon({
