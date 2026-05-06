@@ -116,31 +116,4 @@
 </script>
 
 </body>
-</html>            busMarker.setLatLng(currentPos);
-            map.setView(currentPos, map.getZoom(), { animate: true });
-        }
-    });
-
-    function loadRoute(url) {
-        return fetch(url)
-            .then(response => {
-                if (!response.ok) throw new Error("Netwerk error");
-                return response.json();
-            })
-            .then(data => {
-                L.geoJSON(data, {
-                    filter: function(feature) { return feature.geometry.type !== 'Point'; },
-                    style: function(feature) {
-                        return { color: feature.properties.stroke || '#FF0000', weight: 7, opacity: 1.0, lineJoin: 'round' };
-                    }
-                }).addTo(map);
-            });
-    }
-
-    loadRoute('map.geojson').catch(() => {
-        loadRoute('https://patrickvuffelen.github.io/roparun/map.geojson');
-    });
-</script>
-
-</body>
 </html>
