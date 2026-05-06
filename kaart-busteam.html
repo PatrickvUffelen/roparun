@@ -34,13 +34,34 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    
     const finishLatLng = L.latLng(51.922512, 4.478921);
+    
+    // Locaties voor de huis-markers
+    const karmelietenLatLng = L.latLng(50.7715, 3.8785); // Geraardsbergen
+    const philadelphieLatLng = L.latLng(49.6896, 3.2422); // Frières-Faillouël
+    const schelpLatLng = L.latLng(51.5004, 4.2694);      // De Schelp, Bergen op Zoom
 
+    // Kaart initialisatie
     const map = L.map('map', { zoomControl: false }).setView([51.5, 3.5], 12);
+    
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
+    // Huis icoon definitie
+    var homeIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/1946/1946436.png',
+        iconSize: [40, 40],
+        iconAnchor: [20, 40]
+    });
+
+    // Markers toevoegen voor de drie adressen
+    L.marker(karmelietenLatLng, {icon: homeIcon}).addTo(map).bindPopup('Karmelietenstraat, Geraardsbergen');
+    L.marker(philadelphieLatLng, {icon: homeIcon}).addTo(map).bindPopup('56 Rue de Philadelphie, Frières-Faillouël');
+    L.marker(schelpLatLng, {icon: homeIcon}).addTo(map).bindPopup('De Schelp, Bergen op Zoom');
+
+    // Finish icoon
     var finishIcon = L.icon({
         iconUrl: 'https://cdn-icons-png.flaticon.com/512/4744/4744812.png', 
         iconSize: [60, 60],
@@ -48,6 +69,7 @@
     });
     L.marker(finishLatLng, {icon: finishIcon}).addTo(map);
 
+    // Bus icoon
     var busIcon = L.icon({
         iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
         iconSize: [80, 80],      
@@ -56,11 +78,45 @@
 
     var busMarker = L.marker([0, 0], {icon: busIcon}).addTo(map);
 
+    // Firebase update voor de bus locatie
     db.ref("bus").on("value", function(snapshot) {
         var data = snapshot.val();
         if(data && data.lat && data.lng){
             var currentPos = L.latLng(data.lat, data.lng);
             busMarker.setLatLng(currentPos);
+            map.setView(currentPos, map.getZoom(), { animate: true });
+        }
+    });
+
+    // Route lader
+    function loadRoute(url) {
+        return fetch(url)
+            .then(response => {
+                if (!response.ok) throw new Error("Netwerk error");
+                return response.json();
+            })
+            .then(data => {
+                L.geoJSON(data, {
+                    filter: function(feature) { return feature.geometry.type !== 'Point'; },
+                    style: function(feature) {
+                        return { 
+                            color: feature.properties.stroke || '#0000FF', 
+                            weight: 7, 
+                            opacity: 0.8, 
+                            lineJoin: 'round' 
+                        };
+                    }
+                }).addTo(map);
+            });
+    }
+
+    loadRoute('map.geojson').catch(() => {
+        loadRoute('https://patrickvuffelen.github.io/roparun/map.geojson');
+    });
+</script>
+
+</body>
+</html>            busMarker.setLatLng(currentPos);
             map.setView(currentPos, map.getZoom(), { animate: true });
         }
     });
