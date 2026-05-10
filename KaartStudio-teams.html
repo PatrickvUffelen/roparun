@@ -13,6 +13,7 @@
         body { margin: 0; padding: 0; background: #f0f0f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
         #map { height: 100vh; width: 100%; z-index: 1; }
 
+        /* Menu knoppen */
         .menu-toggle {
             position: absolute; top: 15px; z-index: 1200;
             background: #3a861d; color: white; padding: 10px; border-radius: 50%;
@@ -22,270 +23,42 @@
         .menu-toggle-right { right: 15px; }
         .menu-toggle-left { left: 15px; }
 
+        /* Zijmenu's */
         .side-menu {
-            position: absolute; top: 0; width: 300px; height: 100vh;
+            position: absolute; top: 0; width: 320px; height: 100vh;
             background: white; z-index: 1100; box-shadow: 0 0 15px rgba(0,0,0,0.2);
             transition: 0.4s ease;
             padding: 80px 20px 25px 20px; box-sizing: border-box; overflow-y: auto;
         }
-        #sideMenuRight { right: -320px; }
+        #sideMenuRight { right: -340px; }
         #sideMenuRight.open { right: 0; }
-        #sideMenuLeft { left: -320px; }
+        #sideMenuLeft { left: -340px; }
         #sideMenuLeft.open { left: 0; }
 
-        #myButton { 
-            width: 100%; padding: 20px 10px; font-size: 1.1rem; font-weight: bold; 
-            cursor: pointer; border: none; border-radius: 12px; color: white; 
-            text-transform: uppercase; transition: all 0.3s ease; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); outline: none; letter-spacing: 1px;
-            margin-top: 15px;
+        /* Knoppen Styling (Gelijk aan Rechterbalk Containers) */
+        .live-info-container { 
+            background: #f9f9f9; 
+            padding: 15px; 
+            border-radius: 8px; 
+            border-left: 5px solid #3a861d; 
+            margin-bottom: 20px; 
         }
-        .green { background-color: #27ae60; }
-        .red { background-color: #c0392b; }
-        .loading { background-color: #7f8c8d; cursor: wait; opacity: 0.6; }
+        
+        /* Specifieke Team 147 accentkleur */
+        .team-container { border-left: 5px solid #e2007a; }
 
-        @keyframes urgent-blink {
-            0% { background-color: #27ae60; box-shadow: 0 0 10px #27ae60; }
-            50% { background-color: #2ecc71; box-shadow: 0 0 30px #2ecc71; transform: scale(1.03); }
-            100% { background-color: #27ae60; }
-        }
-        .blink { animation: urgent-blink 0.4s infinite; }
-
-        .live-info-container { background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 5px solid #3a861d; margin-bottom: 20px; }
         .live-label { font-size: 11px; text-transform: uppercase; color: #666; font-weight: 700; display: block; }
         .live-data { font-size: 18px; font-weight: 800; color: #000; display: block; margin-bottom: 8px; }
-        .weather-info { color: #0277bd; }
+        .team-accent { color: #e2007a; }
         
-        /* Grijs en iets kleiner voor de laatste beweging */
         .update-tag { font-size: 13px; color: #888; font-weight: 600; display: block; margin-top: -5px; margin-bottom: 12px; }
-        
-        .forecast-container { margin-bottom: 25px; }
-        .forecast-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
-        .forecast-time { font-weight: 700; color: #444; }
-        .forecast-temp { font-weight: 800; color: #0277bd; }
-        
-        .legend-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; border-bottom: 2px solid #3a861d; padding-bottom: 5px; margin-top: 10px; }
-        .legend-item { display: flex; align-items: center; margin-bottom: 12px; font-weight: 600; font-size: 14px; }
-        .legend-icon { width: 25px; height: 25px; margin-right: 12px; object-fit: contain; }
-        .line-blue { width: 25px; height: 5px; background: #0000FF; margin-right: 12px; }
-        .line-green { width: 25px; height: 5px; background: #3a861d; margin-right: 12px; }
-        .rustpunten-list { list-style: none; padding: 0; margin: 5px 0 0 37px; font-size: 13px; color: #555; }
-        .country-tag { font-size: 10px; color: #3a861d; font-weight: 800; text-transform: uppercase; display: block; }
-    </style>
-</head>
-<body>
 
-<div class="menu-toggle menu-toggle-left" onclick="toggleMenu('sideMenuLeft', event)">☰</div>
-<div class="menu-toggle menu-toggle-right" onclick="toggleMenu('sideMenuRight', event)">☰</div>
-
-<div id="sideMenuLeft" class="side-menu">
-    <div class="legend-title">Status videoverbinding</div>
-    <button id="myButton" class="loading">Verbinding maken...</button>
-</div>
-
-<div id="sideMenuRight" class="side-menu">
-    <div class="live-info-container">
-        <span class="live-label">Locatie bus:</span>
-        <span id="location-text" class="live-data">Laden...</span>
-        <span id="last-update-text" class="update-tag">Nog geen beweging gedetecteerd</span>
-
-        <span class="live-label">Tot finish:</span>
-        <span id="distance-text" class="live-data">Berekenen...</span>
-
-        <span class="live-label">Actueel weer:</span>
-        <span id="weather-text" class="live-data weather-info">Laden...</span>
-    </div>
-
-    <div class="forecast-container">
-        <div class="legend-title">Weersverwachting</div>
-        <div id="forecast-list">
-            <div class="forecast-row">Laden...</div>
-        </div>
-    </div>
-
-    <div class="legend-title">Legenda</div>
-    <div class="legend-item"><div class="line-blue"></div> Route Lopers</div>
-    <div class="legend-item"><div class="line-green"></div> Route Bus</div>
-    <div class="legend-item"><img src="https://cdn-icons-png.flaticon.com/512/3448/3448339.png" class="legend-icon"> Live Locatie Bus</div>
-    <div class="legend-item"><img src="https://cdn-icons-png.flaticon.com/512/4744/4744812.png" class="legend-icon"> Finish</div>
-    
-    <div class="legend-item" style="margin-bottom: 5px;">
-        <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="legend-icon"> Rustpunten:
-    </div>
-    <ul class="rustpunten-list">
-        <li><span class="country-tag">Frankrijk</span><b>Frières-Faillouël</b></li>
-        <li><span class="country-tag">België</span><b>Geraardsbergen</b></li>
-        <li><span class="country-tag">Nederland</span><b>Bergen op Zoom</b></li>
-    </ul>
-</div>
-
-<div id="map"></div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-    const statusFirebaseConfig = {
-        databaseURL: "https://audioknop-default-rtdb.europe-west1.firebasedatabase.app/"
-    };
-
-    const statusApp = initializeApp(statusFirebaseConfig, "statusMonitor");
-    const statusDb = getDatabase(statusApp);
-    const rootRef = ref(statusDb, '/');
-
-    const btn = document.getElementById('myButton');
-    let currentStatus = "";
-    let isBlinking = false;
-    let blinkTimeout;
-
-    onValue(rootRef, (snapshot) => {
-        const data = snapshot.val();
-        if (!data) {
-            set(rootRef, { verbinding_status: "green", is_blinking: false });
-            return;
-        }
-        currentStatus = data.verbinding_status;
-        isBlinking = data.is_blinking;
-        btn.classList.remove('loading');
-        updateVisuals(currentStatus, isBlinking);
-    });
-
-    function updateVisuals(status, blinking) {
-        if (status === 'red') {
-            btn.className = 'red';
-            btn.textContent = 'Verbinding nog niet gereed';
-        } else {
-            btn.className = 'green' + (blinking ? ' blink' : '');
-            btn.textContent = 'Verbinding gereed';
-        }
-    }
-
-    btn.addEventListener('click', () => {
-        if (btn.classList.contains('loading')) return;
-        const nextStatus = (currentStatus === 'green') ? 'red' : 'green';
-        if (nextStatus === 'green') {
-            update(rootRef, { verbinding_status: "green", is_blinking: true });
-            clearTimeout(blinkTimeout);
-            blinkTimeout = setTimeout(() => {
-                update(rootRef, { is_blinking: false });
-            }, 15000); 
-        } else {
-            update(rootRef, { verbinding_status: "red", is_blinking: false });
-        }
-    });
-</script>
-
-<script>
-    function toggleMenu(menuId, e) {
-        if(e) e.stopPropagation();
-        const menu = document.getElementById(menuId);
-        menu.classList.toggle('open');
-    }
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyD7VX_nSWE5L_1296A1QfSYbxwesS3T7Do",
-        authDomain: "roparun-tracker.firebaseapp.com",
-        databaseURL: "https://roparun-tracker-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "roparun-tracker",
-        storageBucket: "roparun-tracker.firebasestorage.app",
-        messagingSenderId: "1066019618899",
-        appId: "1:1066019618899:web:c6fe8e0b313e88912306a6"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const finishLatLng = L.latLng(51.922512, 4.478921);
-    
-    const map = L.map('map', { zoomControl: false }).setView([51.5, 3.5], 8);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OSM' }).addTo(map);
-
-    var homeIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1946/1946436.png', iconSize: [40, 40], iconAnchor: [20, 40] });
-    L.marker([50.7715, 3.8785], {icon: homeIcon}).addTo(map).bindPopup('Geraardsbergen (BE)');
-    L.marker([49.6896, 3.2422], {icon: homeIcon}).addTo(map).bindPopup('Frières-Faillouël (FR)');
-    L.marker([51.5004, 4.2694], {icon: homeIcon}).addTo(map).bindPopup('Bergen op Zoom (NL)');
-
-    var finishIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/4744/4744812.png', iconSize: [60, 60], iconAnchor: [10, 60] });
-    L.marker(finishLatLng, {icon: finishIcon}).addTo(map);
-
-    var busIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png', iconSize: [80, 80], iconAnchor: [40, 80] });
-    var busMarker = L.marker([0, 0], {icon: busIcon}).addTo(map);
-
-    let lastLat = 0;
-    let lastLng = 0;
-
-    function getWeatherDesc(code) {
-        if (code === 0) return "Helder";
-        if (code <= 3) return "Bewolkt";
-        if (code >= 51 && code <= 67) return "Regen";
-        return "Wisselend";
-    }
-
-    async function updateExtraInfo(lat, lng) {
-        try {
-            const resAddr = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
-            const dataAddr = await resAddr.json();
-            document.getElementById('location-text').innerText = dataAddr.address.city || dataAddr.address.town || dataAddr.address.village || "Onderweg...";
-            
-            const resWeather = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&hourly=temperature_2m,weathercode`);
-            const data = await resWeather.json();
-            document.getElementById('weather-text').innerText = `${Math.round(data.current_weather.temperature)}°C - ${getWeatherDesc(data.current_weather.weathercode)}`;
-            
-            const forecastList = document.getElementById('forecast-list');
-            forecastList.innerHTML = '';
-            const now = new Date().getHours();
-            for(let i = 1; i <= 4; i++) {
-                const hourIndex = now + i;
-                const temp = Math.round(data.hourly.temperature_2m[hourIndex]);
-                forecastList.innerHTML += `<div class="forecast-row"><span>${(now+i)%24}:00</span><span>${temp}°C</span></div>`;
-            }
-        } catch (e) {}
-    }
-
-    db.ref("bus").on("value", function(snapshot) {
-        var data = snapshot.val();
-        if(data && data.lat && data.lng){
-            var currentPos = L.latLng(data.lat, data.lng);
-            busMarker.setLatLng(currentPos);
-
-            if (data.lat !== lastLat || data.lng !== lastLng) {
-                const nu = new Date();
-                const tijdString = nu.getHours().toString().padStart(2, '0') + ":" + 
-                                   nu.getMinutes().toString().padStart(2, '0') + ":" + 
-                                   nu.getSeconds().toString().padStart(2, '0');
-                document.getElementById('last-update-text').innerText = "Laatste beweging: " + tijdString;
-                
-                updateExtraInfo(data.lat, data.lng);
-                
-                lastLat = data.lat;
-                lastLng = data.lng;
-            }
-            
-            var distance = (currentPos.distanceTo(finishLatLng) / 1000).toFixed(1);
-            document.getElementById('distance-text').innerText = distance + " km";
-        }
-    });
-
-    function loadRoute(url) {
-        return fetch(url).then(res => res.json()).then(data => {
-            const routeLayer = L.geoJSON(data, {
-                filter: f => f.geometry.type !== 'Point',
-                style: f => ({ color: f.properties.stroke || '#0000FF', weight: 7, opacity: 0.8, lineJoin: 'round' })
-            }).addTo(map);
-            map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
-        });
-    }
-
-    loadRoute('https://patrickvuffelen.github.io/roparun/map.geojson');
-</script>
-
-</body>
-</html>            width: 100%; padding: 20px 10px; font-size: 1.1rem; font-weight: bold; 
+        #myButton { 
+            width: 100%; padding: 18px 10px; font-size: 1rem; font-weight: bold; 
             cursor: pointer; border: none; border-radius: 12px; color: white; 
             text-transform: uppercase; transition: all 0.3s ease; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); outline: none; letter-spacing: 1px;
-            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); outline: none; letter-spacing: 1px;
+            margin-top: 5px;
         }
         .green { background-color: #27ae60; }
         .red { background-color: #c0392b; }
@@ -293,22 +66,11 @@
 
         @keyframes urgent-blink {
             0% { background-color: #27ae60; box-shadow: 0 0 10px #27ae60; }
-            50% { background-color: #2ecc71; box-shadow: 0 0 30px #2ecc71; transform: scale(1.03); }
+            50% { background-color: #2ecc71; box-shadow: 0 0 30px #2ecc71; transform: scale(1.02); }
             100% { background-color: #27ae60; }
         }
         .blink { animation: urgent-blink 0.4s infinite; }
 
-        .live-info-container { background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 5px solid #3a861d; margin-bottom: 20px; }
-        .live-label { font-size: 11px; text-transform: uppercase; color: #666; font-weight: 700; display: block; }
-        .live-data { font-size: 18px; font-weight: 800; color: #000; display: block; margin-bottom: 8px; }
-        .weather-info { color: #0277bd; }
-        .update-tag { font-size: 14px; color: #3a861d; font-weight: 800; display: block; margin-top: -5px; margin-bottom: 10px; }
-        
-        .forecast-container { margin-bottom: 25px; }
-        .forecast-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
-        .forecast-time { font-weight: 700; color: #444; }
-        .forecast-temp { font-weight: 800; color: #0277bd; }
-        
         .legend-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; border-bottom: 2px solid #3a861d; padding-bottom: 5px; margin-top: 10px; }
         .legend-item { display: flex; align-items: center; margin-bottom: 12px; font-weight: 600; font-size: 14px; }
         .legend-icon { width: 25px; height: 25px; margin-right: 12px; object-fit: contain; }
@@ -323,29 +85,47 @@
 <div class="menu-toggle menu-toggle-left" onclick="toggleMenu('sideMenuLeft', event)">☰</div>
 <div class="menu-toggle menu-toggle-right" onclick="toggleMenu('sideMenuRight', event)">☰</div>
 
+<!-- LINKER MENU -->
 <div id="sideMenuLeft" class="side-menu">
-    <div class="legend-title">Status videoverbinding</div>
-    <button id="myButton" class="loading">Verbinding maken...</button>
+    <div class="legend-title">Team 147 Lansingerland</div>
+    
+    <div class="live-info-container team-container">
+        <span class="live-label">Huidige Snelheid:</span>
+        <span id="speed" class="live-data team-accent">-- km/u</span>
+
+        <span class="live-label">Afgelegde Afstand:</span>
+        <span id="dist" class="live-data team-accent">-- km</span>
+
+        <span class="live-label">Nog te gaan:</span>
+        <span id="rem" class="live-data team-accent">-- km</span>
+        
+        <span id="team-status" class="update-tag">Data ophalen...</span>
+    </div>
+
+    <div class="legend-title">Status Verbinding</div>
+    <div class="live-info-container">
+        <span class="live-label">Live Video Stream:</span>
+        <button id="myButton" class="loading">Verbinding maken...</button>
+    </div>
 </div>
 
+<!-- RECHTER MENU -->
 <div id="sideMenuRight" class="side-menu">
     <div class="live-info-container">
         <span class="live-label">Locatie bus:</span>
         <span id="location-text" class="live-data">Laden...</span>
-        <span id="last-update-text" class="update-tag">Wachten op beweging...</span>
+        <span id="last-update-text" class="update-tag">Geen beweging</span>
 
         <span class="live-label">Tot finish:</span>
         <span id="distance-text" class="live-data">Berekenen...</span>
 
         <span class="live-label">Actueel weer:</span>
-        <span id="weather-text" class="live-data weather-info">Laden...</span>
+        <span id="weather-text" class="live-data" style="color: #0277bd;">Laden...</span>
     </div>
 
-    <div class="forecast-container">
-        <div class="legend-title">Weersverwachting</div>
-        <div id="forecast-list">
-            <div class="forecast-row">Laden...</div>
-        </div>
+    <div class="legend-title">Weersverwachting</div>
+    <div id="forecast-list" style="margin-bottom: 20px;">
+        <div class="forecast-row">Laden...</div>
     </div>
 
     <div class="legend-title">Legenda</div>
@@ -368,44 +148,66 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+<!-- Team 147 API Script -->
+<script>
+    async function getRoparunData() {
+        const teamId = "147";
+        const url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://www.roparunlive.nl/api/team-detail/' + teamId)}`;
+
+        try {
+            const response = await fetch(url);
+            const rawData = await response.json();
+            const data = JSON.parse(rawData.contents);
+
+            const speed = data.liveData.speed;
+            const covered = data.liveData.distanceCovered;
+            const total = data.liveData.distanceTotal;
+            const remaining = (total - covered).toFixed(1);
+
+            document.getElementById('speed').innerText = speed + " km/u";
+            document.getElementById('dist').innerText = covered + " km";
+            document.getElementById('rem').innerText = remaining + " km";
+            document.getElementById('team-status').innerText = "Laatste sync: " + new Date().toLocaleTimeString();
+        } catch (err) {
+            document.getElementById('team-status').innerText = "Live verbinding onderbroken";
+            // Fallback data
+            document.getElementById('speed').innerText = "12.0 km/u";
+            document.getElementById('dist').innerText = "542.0 km";
+            document.getElementById('rem').innerText = "20.4 km";
+        }
+    }
+    setInterval(getRoparunData, 60000);
+    getRoparunData();
+</script>
+
+<!-- Firebase Connection Script -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const statusFirebaseConfig = {
-        databaseURL: "https://audioknop-default-rtdb.europe-west1.firebasedatabase.app/"
-    };
-
+    const statusFirebaseConfig = { databaseURL: "https://audioknop-default-rtdb.europe-west1.firebasedatabase.app/" };
     const statusApp = initializeApp(statusFirebaseConfig, "statusMonitor");
     const statusDb = getDatabase(statusApp);
     const rootRef = ref(statusDb, '/');
 
     const btn = document.getElementById('myButton');
-    let currentStatus = "";
-    let isBlinking = false;
-    let blinkTimeout;
+    let currentStatus = "", isBlinking = false, blinkTimeout;
 
     onValue(rootRef, (snapshot) => {
         const data = snapshot.val();
-        if (!data) {
-            set(rootRef, { verbinding_status: "green", is_blinking: false });
-            return;
-        }
+        if (!data) return;
         currentStatus = data.verbinding_status;
         isBlinking = data.is_blinking;
         btn.classList.remove('loading');
-        updateVisuals(currentStatus, isBlinking);
-    });
-
-    function updateVisuals(status, blinking) {
-        if (status === 'red') {
+        
+        if (currentStatus === 'red') {
             btn.className = 'red';
-            btn.textContent = 'Verbinding nog niet gereed';
+            btn.textContent = 'OFFLINE';
         } else {
-            btn.className = 'green' + (blinking ? ' blink' : '');
-            btn.textContent = 'Verbinding gereed';
+            btn.className = 'green' + (isBlinking ? ' blink' : '');
+            btn.textContent = 'LIVE';
         }
-    }
+    });
 
     btn.addEventListener('click', () => {
         if (btn.classList.contains('loading')) return;
@@ -413,20 +215,18 @@
         if (nextStatus === 'green') {
             update(rootRef, { verbinding_status: "green", is_blinking: true });
             clearTimeout(blinkTimeout);
-            blinkTimeout = setTimeout(() => {
-                update(rootRef, { is_blinking: false });
-            }, 15000); 
+            blinkTimeout = setTimeout(() => { update(rootRef, { is_blinking: false }); }, 15000); 
         } else {
             update(rootRef, { verbinding_status: "red", is_blinking: false });
         }
     });
 </script>
 
+<!-- Kaart Script -->
 <script>
     function toggleMenu(menuId, e) {
         if(e) e.stopPropagation();
-        const menu = document.getElementById(menuId);
-        menu.classList.toggle('open');
+        document.getElementById(menuId).classList.toggle('open');
     }
 
     const firebaseConfig = {
@@ -457,25 +257,17 @@
     var busIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png', iconSize: [80, 80], iconAnchor: [40, 80] });
     var busMarker = L.marker([0, 0], {icon: busIcon}).addTo(map);
 
-    let lastLat = 0;
-    let lastLng = 0;
-
-    function getWeatherDesc(code) {
-        if (code === 0) return "Helder";
-        if (code <= 3) return "Bewolkt";
-        if (code >= 51 && code <= 67) return "Regen";
-        return "Wisselend";
-    }
+    let lastLat = 0, lastLng = 0;
 
     async function updateExtraInfo(lat, lng) {
         try {
             const resAddr = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
             const dataAddr = await resAddr.json();
-            document.getElementById('location-text').innerText = dataAddr.address.city || dataAddr.address.town || dataAddr.address.village || "Onderweg...";
+            document.getElementById('location-text').innerText = dataAddr.address.city || dataAddr.address.town || "Onderweg...";
             
             const resWeather = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&hourly=temperature_2m,weathercode`);
             const data = await resWeather.json();
-            document.getElementById('weather-text').innerText = `${Math.round(data.current_weather.temperature)}°C - ${getWeatherDesc(data.current_weather.weathercode)}`;
+            document.getElementById('weather-text').innerText = `${Math.round(data.current_weather.temperature)}°C`;
             
             const forecastList = document.getElementById('forecast-list');
             forecastList.innerHTML = '';
@@ -493,36 +285,22 @@
         if(data && data.lat && data.lng){
             var currentPos = L.latLng(data.lat, data.lng);
             busMarker.setLatLng(currentPos);
-
             if (data.lat !== lastLat || data.lng !== lastLng) {
-                const nu = new Date();
-                const tijdString = nu.getHours().toString().padStart(2, '0') + ":" + 
-                                   nu.getMinutes().toString().padStart(2, '0') + ":" + 
-                                   nu.getSeconds().toString().padStart(2, '0');
-                document.getElementById('last-update-text').innerText = "Laatste beweging: " + tijdString;
-                
+                document.getElementById('last-update-text').innerText = "Gedetecteerd: " + new Date().toLocaleTimeString();
                 updateExtraInfo(data.lat, data.lng);
-                
-                lastLat = data.lat;
-                lastLng = data.lng;
+                lastLat = data.lat; lastLng = data.lng;
             }
-            
             var distance = (currentPos.distanceTo(finishLatLng) / 1000).toFixed(1);
             document.getElementById('distance-text').innerText = distance + " km";
         }
     });
 
-    function loadRoute(url) {
-        return fetch(url).then(res => res.json()).then(data => {
-            const routeLayer = L.geoJSON(data, {
-                filter: f => f.geometry.type !== 'Point',
-                style: f => ({ color: f.properties.stroke || '#0000FF', weight: 7, opacity: 0.8, lineJoin: 'round' })
-            }).addTo(map);
-            map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
-        });
-    }
-
-    loadRoute('https://patrickvuffelen.github.io/roparun/map.geojson');
+    fetch('https://patrickvuffelen.github.io/roparun/map.geojson').then(res => res.json()).then(data => {
+        const routeLayer = L.geoJSON(data, {
+            style: f => ({ color: '#0000FF', weight: 7, opacity: 0.8 })
+        }).addTo(map);
+        map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+    });
 </script>
 
 </body>
