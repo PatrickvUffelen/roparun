@@ -182,7 +182,7 @@
         }
     });
 
-    // --- Roparun Feitjes Logica (4 feitjes) ---
+    // --- Geüpdatete Roparun Feitjes Lijst ---
     const feitjes = [
         "De Roparun is een estafetteloop van ruim 500 kilometer.",
         "De naam Roparun staat voor Rotterdam-Parijs-Run.",
@@ -201,7 +201,7 @@
         "De Roparun wordt ook wel “een avontuur voor het leven” genoemd.",
         "Duizenden deelnemers doen jaarlijks mee aan de Roparun.",
         "De Roparun is uitgegroeid van een klein initiatief naar een evenement met honderden teams.",
-        "Dit jaar bestaat de Roparun 35 jaar"
+        "Dit jaar bestaat de Roparun 35 jaar.",
         "Tijdens de Roparun zijn teams ongeveer 48 uur onderweg met nauwelijks slaap.",
         "Sommige deelnemers krijgen onderweg last van hallucinaties door vermoeidheid.",
         "Een loper legt per beurt vaak maar een kilometers af voordat er weer gewisseld wordt.",
@@ -211,8 +211,8 @@
         "In sommige dorpen verandert de Roparun-route tijdelijk in een feeststraat met muziek en waterpunten.",
         "De route loopt soms dwars door woonwijken waar bewoners midden in de nacht buiten staan om deelnemers aan te moedigen.",
         "Veel deelnemers plakken namen van overleden dierbaren op hun kleding of voertuigen.",
-        "Deelnemers verbranden tijdens het weekend duizenden calorieën. Macaroni staat vaak op het menu."
-        "Er zijn teams die compleet eigen mobiele keukens meenemen. Maar de meeste teams warmen maaltijiden op.", 
+        "Deelnemers verbranden tijdens het weekend duizenden calorieën. Macaroni staat vaak op het menu.",
+        "Er zijn teams die compleet eigen mobiele keukens meenemen. Maar de meeste teams warmen maaltijden op.",
         "Sommige deelnemers trainen een jaar lang speciaal voor één editie van de Roparun.",
         "De finish op de Coolsingel is voor veel deelnemers emotioneel door de lange tocht en het goede doel.",
         "Sommige teams hebben vaste koks of masseurs die ieder jaar meegaan.",
@@ -220,30 +220,28 @@
         "Tijdens de nachtelijke uren lopen deelnemers met reflecterende verlichting en hoofdlampen.",
         "Team Jeroen& is geformeerd door een hechte vriendengroep uit Berkel en Rodenrijs rondom de ongeneeslijk zieke Jeroen van Leeuwen.",
         "Onder het motto 'Lopen als leeuwen' heeft Team Jeroen& bij C.V.V. Berkel al een recordbedrag van ruim € 31.000,- ingezameld met een sponsorloop.",
-        "Hoewel de naamgever zelf niet kan rennen, wordt Team Jeroen& langs de route door hem gesupport terwijl zij hun streefbedrag van € 50.000,- proberen te halen."
+        "Hoewel de naamgever zelf niet kan rennen, wordt Team Jeroen& langs de route door hem gesupport terwijl zij hun streefbedrag van € 50.000,- proberen te halen.",
         "De naam Jatogniettan?! staat symbool voor de nuchtere mentaliteit van dit 25-koppige team dat dit jaar voor de Roparun de grens van € 20.000,- wil passeren.",
         "Binnen Jatogniettan?! wordt vertrouwd op routine, met ervaren deelnemers die in 2026 al voor de elfde keer de tocht naar de Coolsingel volbrengen.",
         "Met een mix van lopers en fietsers zet Jatogniettan?! zich vol passie in om de kwaliteit van leven voor mensen met kanker te verbeteren.",
         "Team 33 Vrienden van Berkel is een zeer ervaren en hechte groep uit Berkel en Rodenrijs die al sinds 1993 onafgebroken deelneemt aan de Roparun.",
         "Door de jaren heen heeft Team 33 Vrienden van Berkel een enorme impact gemaakt in hun dorp door jaarlijks tienduizenden euro's in te zamelen met acties zoals hun grote loterij.",
-        "Hoewel een deel van de lopers inmiddels is uitgewaaierd naar Team Jeroen&, blijft Team 33 Vrienden van Berkel een fundament van de Roparun-community in Lansingerland.",
+        "Hoewel een deel van de lopers inmiddels is uitgewaaierd naar Team Jeroen&, blijft Team 33 Vrienden van Berkel een fundament van de Roparun-community in Lansingerland."
     ];
 
     function toonVierFeitjes() {
         const container = document.getElementById('fact-container');
-        // Kopieer en schud de lijst om 4 unieke feitjes te pakken
         const shuffled = [...feitjes].sort(() => 0.5 - Math.random());
         const selectie = shuffled.slice(0, 4);
-        
         container.innerHTML = selectie.map(f => `<span class="fact-item">${f}</span>`).join('');
     }
 
     toonVierFeitjes(); 
-    setInterval(toonVierFeitjes, 300000); // Elke 5 minuten verversen
+    setInterval(toonVierFeitjes, 300000); 
 </script>
 
 <script>
-    // --- Rest van je originele Map Logica ---
+    // --- Kaart & UI Logica ---
     function toggleMenu(menuId, e) {
         if(e) e.stopPropagation();
         const menu = document.getElementById(menuId);
