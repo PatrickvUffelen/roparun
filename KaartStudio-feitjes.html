@@ -132,12 +132,10 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const statusFirebaseConfig = {
-        databaseURL: "https://audioknop-default-rtdb.europe-west1.firebasedatabase.app/"
-    };
-
+    // --- Status Monitor Configuratie (Audio Knop) ---
+    const statusFirebaseConfig = { databaseURL: "https://audioknop-default-rtdb.europe-west1.firebasedatabase.app/" };
     const statusApp = initializeApp(statusFirebaseConfig, "statusMonitor");
     const statusDb = getDatabase(statusApp);
     const rootRef = ref(statusDb, '/');
@@ -179,6 +177,7 @@
         }
     });
 
+    // --- Wist Je Dat Systeem ---
     const feitjes = [
         "De Roparun is een estafetteloop van ruim 500 kilometer.",
         "De naam Roparun staat voor Rotterdam-Parijs-Run.",
@@ -201,7 +200,7 @@
         "Tijdens de Roparun zijn teams ongeveer 48 uur onderweg met nauwelijks slaap.",
         "Sommige deelnemers krijgen onderweg last van hallucinaties door vermoeidheid.",
         "Een loper legt per beurt vaak maar een kilometers af voordat er weer gewisseld wordt.",
-        "Teams gebruiken vaak draaiboeken van tientalten pagina’s om alles te organiseren.",
+        "Teams gebruiken vaak draaiboeken van tientallen pagina’s om alles te organiseren.",
         "Er bestaan teams die al sinds de jaren negentig meedoen aan de Roparun.",
         "De karavaan van één team kan bestaan uit meerdere busjes, fietsen en ondersteuningswagens.",
         "In sommige dorpen verandert de Roparun-route tijdelijk in een feeststraat met muziek en waterpunten.",
@@ -233,7 +232,7 @@
     }
 
     toonVierFeitjes(); 
-    setInterval(toonVierFeitjes, 600000); // 10 minuten
+    setInterval(toonVierFeitjes, 600000); // Wissel elke 10 minuten
 </script>
 
 <script>
@@ -243,6 +242,7 @@
         menu.classList.toggle('open');
     }
 
+    // --- Hoofd Tracker Configuratie ---
     const firebaseConfig = {
         apiKey: "AIzaSyD7VX_nSWE5L_1296A1QfSYbxwesS3T7Do",
         authDomain: "roparun-tracker.firebaseapp.com",
@@ -255,10 +255,10 @@
     const db = firebase.database();
     const finishLatLng = L.latLng(51.922512, 4.478921);
     
-    // Start met een standaard view, wordt direct overschreven zodra route laadt
     const map = L.map('map', { zoomControl: false }).setView([51.5, 3.5], 8);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OSM' }).addTo(map);
 
+    // Marker Icons
     var homeIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1946/1946436.png', iconSize: [40, 40], iconAnchor: [20, 40] });
     L.marker([50.7715, 3.8785], {icon: homeIcon}).addTo(map);
     L.marker([49.6896, 3.2422], {icon: homeIcon}).addTo(map);
@@ -272,14 +272,12 @@
 
     let lastLat = 0, lastLng = 0;
 
-    async function updateExtraInfo(lat, lng) {
+    // --- Functies voor Live Data ---
+    async function updateWeather(lat, lng) {
+        if (!lat || !lng) return;
         try {
-            const resAddr = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
-            const dataAddr = await resAddr.json();
-            document.getElementById('location-text').innerText = dataAddr.address.city || dataAddr.address.town || dataAddr.address.village || "Onderweg...";
-            
-            const resWeather = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&hourly=temperature_2m,weathercode`);
-            const data = await resWeather.json();
+            const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&hourly=temperature_2m,weathercode`);
+            const data = await res.json();
             document.getElementById('weather-text').innerText = `${Math.round(data.current_weather.temperature)}°C`;
             
             const forecastList = document.getElementById('forecast-list');
@@ -290,18 +288,29 @@
                 const temp = Math.round(data.hourly.temperature_2m[hourIndex]);
                 forecastList.innerHTML += `<div class="forecast-row"><span>${(now+i)%24}:00</span><span>${temp}°C</span></div>`;
             }
+        } catch (e) { console.error("Weer fout"); }
+    }
+
+    async function updateAddress(lat, lng) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
+            const data = await res.json();
+            document.getElementById('location-text').innerText = data.address.city || data.address.town || data.address.village || "Onderweg...";
         } catch (e) {}
     }
 
+    // Luister naar de bus-locatie
     db.ref("bus").on("value", function(snapshot) {
         var data = snapshot.val();
         if(data && data.lat && data.lng){
             var currentPos = L.latLng(data.lat, data.lng);
             busMarker.setLatLng(currentPos);
+            
             if (data.lat !== lastLat || data.lng !== lastLng) {
                 const nu = new Date();
                 document.getElementById('last-update-text').innerText = "Laatste beweging: " + nu.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                updateExtraInfo(data.lat, data.lng);
+                updateAddress(data.lat, data.lng);
+                updateWeather(data.lat, data.lng);
                 lastLat = data.lat; lastLng = data.lng;
             }
             var distance = (currentPos.distanceTo(finishLatLng) / 1000).toFixed(1);
@@ -309,14 +318,18 @@
         }
     });
 
+    // Automatische weer-verversing elk uur
+    setInterval(() => {
+        if(lastLat !== 0) updateWeather(lastLat, lastLng);
+    }, 3600000);
+
+    // Laad Route en Zoom naar de volledige route
     function loadRoute(url) {
         return fetch(url).then(res => res.json()).then(data => {
             const routeLayer = L.geoJSON(data, {
                 filter: f => f.geometry.type !== 'Point',
                 style: f => ({ color: f.properties.stroke || '#0000FF', weight: 7, opacity: 0.8 })
             }).addTo(map);
-            
-            // ZOOM HIER IN OP DE VOLLEDIGE ROUTE
             map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
         });
     }
