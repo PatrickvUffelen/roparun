@@ -1,4 +1,4 @@
-v<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="nl">
 <head>
     <title>Roparun 2026 Live Route - RTV Lansingerland</title>
@@ -118,7 +118,7 @@ v<!DOCTYPE html>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const statusFirebaseConfig = {
         databaseURL: "https://audioknop-default-rtdb.europe-west1.firebasedatabase.app/"
@@ -126,50 +126,67 @@ v<!DOCTYPE html>
 
     const statusApp = initializeApp(statusFirebaseConfig, "statusMonitor");
     const statusDb = getDatabase(statusApp);
-    const statusRef = ref(statusDb, 'verbinding_status');
+    const rootRef = ref(statusDb, '/');
 
     const btn = document.getElementById('myButton');
     let currentStatus = "";
-    let blinkActive = false;
+    let isBlinking = false;
     let blinkTimeout;
 
-    onValue(statusRef, (snapshot) => {
-        const status = snapshot.val();
-        if (status === null) { set(statusRef, "green"); return; }
-        currentStatus = status;
+    // LUISTEREN: Luister naar de hele root voor status én blink info
+    onValue(rootRef, (snapshot) => {
+        const data = snapshot.val();
+        if (!data) {
+            set(rootRef, { verbinding_status: "green", is_blinking: false });
+            return;
+        }
+
+        currentStatus = data.verbinding_status;
+        isBlinking = data.is_blinking;
+        
         btn.classList.remove('loading');
-        updateVisuals(status);
+        updateVisuals(currentStatus, isBlinking);
     });
 
-    function updateVisuals(status) {
+    function updateVisuals(status, blinking) {
         if (status === 'red') {
             btn.className = 'red';
             btn.textContent = 'Verbinding nog niet gereed';
-            blinkActive = false;
-            clearTimeout(blinkTimeout);
         } else {
-            btn.className = 'green' + (blinkActive ? ' blink' : '');
+            // Voeg de blink klasse toe als de database zegt dat we moeten knipperen
+            btn.className = 'green' + (blinking ? ' blink' : '');
             btn.textContent = 'Verbinding gereed';
         }
     }
 
     btn.addEventListener('click', () => {
         if (btn.classList.contains('loading')) return;
+
         const nextStatus = (currentStatus === 'green') ? 'red' : 'green';
+        
         if (nextStatus === 'green') {
-            blinkActive = true;
-            updateVisuals('green');
+            // 1. Zet status op groen EN zet knipperen AAN in database voor iedereen
+            update(rootRef, {
+                verbinding_status: "green",
+                is_blinking: true
+            });
+
+            // 2. Start timer om knipperen na 10 sec UIT te zetten in database
+            clearTimeout(blinkTimeout);
             blinkTimeout = setTimeout(() => {
-                blinkActive = false;
-                updateVisuals('green');
+                update(rootRef, { is_blinking: false });
             }, 10000);
+        } else {
+            // Als we naar rood gaan, zetten we knipperen direct uit
+            update(rootRef, {
+                verbinding_status: "red",
+                is_blinking: false
+            });
         }
-        set(statusRef, nextStatus);
     });
 </script>
 
 <script>
-    // Aangepaste functie: verwijdert de 'classList.remove' van het andere menu
     function toggleMenu(menuId, e) {
         if(e) e.stopPropagation();
         const menu = document.getElementById(menuId);
@@ -191,7 +208,6 @@ v<!DOCTYPE html>
     const finishLatLng = L.latLng(51.922512, 4.478921);
     
     const map = L.map('map', { zoomControl: false }).setView([51.5, 3.5], 8);
-
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OSM' }).addTo(map);
 
     var homeIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1946/1946436.png', iconSize: [40, 40], iconAnchor: [20, 40] });
