@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+v<!DOCTYPE html>
 <html lang="nl">
 <head>
     <title>Roparun 2026 Live Route - RTV Lansingerland</title>
@@ -169,11 +169,10 @@
 </script>
 
 <script>
+    // Aangepaste functie: verwijdert de 'classList.remove' van het andere menu
     function toggleMenu(menuId, e) {
         if(e) e.stopPropagation();
         const menu = document.getElementById(menuId);
-        // We verwijderen het automatisch sluiten van de andere menu's hier NIET 
-        // zodat ze beide open kunnen staan als de gebruiker dat wilt.
         menu.classList.toggle('open');
     }
 
@@ -191,7 +190,6 @@
     const db = firebase.database();
     const finishLatLng = L.latLng(51.922512, 4.478921);
     
-    // ZoomControl blijft uit, kaart reageert niet meer op kliks om menu's te sluiten
     const map = L.map('map', { zoomControl: false }).setView([51.5, 3.5], 8);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OSM' }).addTo(map);
@@ -252,7 +250,6 @@
                 filter: f => f.geometry.type !== 'Point',
                 style: f => ({ color: f.properties.stroke || '#0000FF', weight: 7, opacity: 0.8, lineJoin: 'round' })
             }).addTo(map);
-            // Zorgt ervoor dat de hele route direct in beeld komt
             map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
         });
     }
