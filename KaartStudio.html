@@ -90,8 +90,8 @@
         <span class="live-label">Actueel weer:</span>
         <span id="weather-text" class="live-data weather-info">Laden...</span>
         <hr style="border:0; border-top:1px solid #eee; margin: 10px 0;">
-        <span class="live-label">Laatste locatie update:</span>
-        <span id="last-update-text" class="update-tag">Wachten op data...</span>
+        <span class="live-label">Laatste beweging bus:</span>
+        <span id="last-update-text" class="update-tag">Wachten op beweging...</span>
     </div>
 
     <div class="forecast-container">
@@ -210,6 +210,10 @@
     var busIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png', iconSize: [80, 80], iconAnchor: [40, 80] });
     var busMarker = L.marker([0, 0], {icon: busIcon}).addTo(map);
 
+    // Variabelen om de laatste positie te onthouden
+    let lastLat = 0;
+    let lastLng = 0;
+
     function getWeatherDesc(code) {
         if (code === 0) return "Helder";
         if (code <= 3) return "Bewolkt";
@@ -244,17 +248,26 @@
         if(data && data.lat && data.lng){
             var currentPos = L.latLng(data.lat, data.lng);
             busMarker.setLatLng(currentPos);
-            updateExtraInfo(data.lat, data.lng);
+
+            // CHECK: Is de locatie echt veranderd ten opzichte van de vorige keer?
+            if (data.lat !== lastLat || data.lng !== lastLng) {
+                // Positie is veranderd, werk de tijdstempel bij
+                const nu = new Date();
+                const tijdString = nu.getHours().toString().padStart(2, '0') + ":" + 
+                                   nu.getMinutes().toString().padStart(2, '0') + ":" + 
+                                   nu.getSeconds().toString().padStart(2, '0');
+                document.getElementById('last-update-text').innerText = tijdString;
+                
+                // Update het weer en adres alleen bij beweging (bespaart API calls)
+                updateExtraInfo(data.lat, data.lng);
+                
+                // Onthoud deze nieuwe positie voor de volgende check
+                lastLat = data.lat;
+                lastLng = data.lng;
+            }
             
             var distance = (currentPos.distanceTo(finishLatLng) / 1000).toFixed(1);
             document.getElementById('distance-text').innerText = distance + " km";
-            
-            // Zet het tijdstip van binnenkomst in het rechtermenu
-            const nu = new Date();
-            const tijdString = nu.getHours().toString().padStart(2, '0') + ":" + 
-                               nu.getMinutes().toString().padStart(2, '0') + ":" + 
-                               nu.getSeconds().toString().padStart(2, '0');
-            document.getElementById('last-update-text').innerText = tijdString;
         }
     });
 
