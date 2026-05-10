@@ -13,7 +13,6 @@
         body { margin: 0; padding: 0; background: #f0f0f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
         #map { height: 100vh; width: 100%; z-index: 1; }
 
-        /* Menu knoppen */
         .menu-toggle {
             position: absolute; top: 15px; z-index: 1200;
             background: #3a861d; color: white; padding: 10px; border-radius: 50%;
@@ -23,7 +22,6 @@
         .menu-toggle-right { right: 15px; }
         .menu-toggle-left { left: 15px; }
 
-        /* Zijmenu's */
         .side-menu {
             position: absolute; top: 0; width: 300px; height: 100vh;
             background: white; z-index: 1100; box-shadow: 0 0 15px rgba(0,0,0,0.2);
@@ -35,7 +33,6 @@
         #sideMenuLeft { left: -320px; }
         #sideMenuLeft.open { left: 0; }
 
-        /* Status Button Styling (Code 2) */
         #myButton { 
             width: 100%; padding: 20px 10px; font-size: 1.1rem; font-weight: bold; 
             cursor: pointer; border: none; border-radius: 12px; color: white; 
@@ -54,7 +51,6 @@
         }
         .blink { animation: urgent-blink 0.4s infinite; }
 
-        /* Kaart Informatie Styles (Code 1) */
         .live-info-container { background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 5px solid #3a861d; margin-bottom: 20px; }
         .live-label { font-size: 11px; text-transform: uppercase; color: #666; font-weight: 700; display: block; }
         .live-data { font-size: 18px; font-weight: 800; color: #000; display: block; margin-bottom: 8px; }
@@ -120,7 +116,6 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Firebase Module voor de Status Knop (Code 2) -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -173,13 +168,12 @@
     });
 </script>
 
-<!-- Script voor de Kaart (Code 1) -->
 <script>
     function toggleMenu(menuId, e) {
         if(e) e.stopPropagation();
         const menu = document.getElementById(menuId);
-        const otherMenuId = menuId === 'sideMenuLeft' ? 'sideMenuRight' : 'sideMenuLeft';
-        document.getElementById(otherMenuId).classList.remove('open');
+        // We verwijderen het automatisch sluiten van de andere menu's hier NIET 
+        // zodat ze beide open kunnen staan als de gebruiker dat wilt.
         menu.classList.toggle('open');
     }
 
@@ -197,18 +191,15 @@
     const db = firebase.database();
     const finishLatLng = L.latLng(51.922512, 4.478921);
     
+    // ZoomControl blijft uit, kaart reageert niet meer op kliks om menu's te sluiten
     const map = L.map('map', { zoomControl: false }).setView([51.5, 3.5], 8);
-    map.on('click', () => {
-        document.getElementById('sideMenuRight').classList.remove('open');
-        document.getElementById('sideMenuLeft').classList.remove('open');
-    });
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OSM' }).addTo(map);
 
     var homeIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1946/1946436.png', iconSize: [40, 40], iconAnchor: [20, 40] });
-    L.marker([50.7715, 3.8785], {icon: homeIcon}).addTo(map).bindPopup('<b>Geraardsbergen (BE)</b><br>Karmelietenstraat');
-    L.marker([49.6896, 3.2422], {icon: homeIcon}).addTo(map).bindPopup('<b>Frières-Faillouël (FR)</b><br>Rue de Philadelphie');
-    L.marker([51.5004, 4.2694], {icon: homeIcon}).addTo(map).bindPopup('<b>Bergen op Zoom (NL)</b><br>De Schelp');
+    L.marker([50.7715, 3.8785], {icon: homeIcon}).addTo(map).bindPopup('<b>Geraardsbergen (BE)</b>');
+    L.marker([49.6896, 3.2422], {icon: homeIcon}).addTo(map).bindPopup('<b>Frières-Faillouël (FR)</b>');
+    L.marker([51.5004, 4.2694], {icon: homeIcon}).addTo(map).bindPopup('<b>Bergen op Zoom (NL)</b>');
 
     var finishIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/4744/4744812.png', iconSize: [60, 60], iconAnchor: [10, 60] });
     L.marker(finishLatLng, {icon: finishIcon}).addTo(map);
@@ -220,8 +211,6 @@
         if (code === 0) return "Helder";
         if (code <= 3) return "Bewolkt";
         if (code >= 51 && code <= 67) return "Regen";
-        if (code >= 71 && code <= 77) return "Sneeuw";
-        if (code >= 80) return "Buien";
         return "Wisselend";
     }
 
@@ -229,32 +218,21 @@
         try {
             const resAddr = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
             const dataAddr = await resAddr.json();
-            document.getElementById('location-text').innerText = dataAddr.address.city || dataAddr.address.town || dataAddr.address.village || "Onderweg...";
-        } catch (e) {}
-
-        try {
+            document.getElementById('location-text').innerText = dataAddr.address.city || dataAddr.address.town || "Onderweg...";
+            
             const resWeather = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&hourly=temperature_2m,weathercode`);
             const data = await resWeather.json();
-            const currentTemp = Math.round(data.current_weather.temperature);
-            const currentDesc = getWeatherDesc(data.current_weather.weathercode);
-            document.getElementById('weather-text').innerText = `${currentTemp}°C - ${currentDesc}`;
-
+            document.getElementById('weather-text').innerText = `${Math.round(data.current_weather.temperature)}°C - ${getWeatherDesc(data.current_weather.weathercode)}`;
+            
             const forecastList = document.getElementById('forecast-list');
             forecastList.innerHTML = '';
             const now = new Date().getHours();
             for(let i = 1; i <= 4; i++) {
                 const hourIndex = now + i;
-                const time = (now + i) % 24 + ":00";
                 const temp = Math.round(data.hourly.temperature_2m[hourIndex]);
-                const desc = getWeatherDesc(data.hourly.weathercode[hourIndex]);
-                forecastList.innerHTML += `
-                    <div class="forecast-row">
-                        <span class="forecast-time">${time}</span>
-                        <span>${desc}</span>
-                        <span class="forecast-temp">${temp}°C</span>
-                    </div>`;
+                forecastList.innerHTML += `<div class="forecast-row"><span>${(now+i)%24}:00</span><span>${temp}°C</span></div>`;
             }
-        } catch (e) { document.getElementById('weather-text').innerText = "--"; }
+        } catch (e) {}
     }
 
     db.ref("bus").on("value", function(snapshot) {
@@ -268,13 +246,13 @@
         }
     });
 
-    // ORIGINELE ROUTE CODE (DO NOT CHANGE)
     function loadRoute(url) {
         return fetch(url).then(res => res.json()).then(data => {
             const routeLayer = L.geoJSON(data, {
                 filter: f => f.geometry.type !== 'Point',
                 style: f => ({ color: f.properties.stroke || '#0000FF', weight: 7, opacity: 0.8, lineJoin: 'round' })
             }).addTo(map);
+            // Zorgt ervoor dat de hele route direct in beeld komt
             map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
         });
     }
