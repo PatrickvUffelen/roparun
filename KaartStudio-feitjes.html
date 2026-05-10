@@ -86,7 +86,7 @@
     <div class="legend-title" style="margin-top: 30px;">Wist je dat?</div>
     <span class="refresh-note">Iedere 10 minuten andere weetjes</span>
     <div class="live-info-container" id="fact-container">
-        <!-- Hier komen de 5 feitjes -->
+        <!-- Hier komen de 4 feitjes -->
     </div>
 </div>
 
@@ -225,15 +225,15 @@
         "Hoewel een deel van de lopers inmiddels is uitgewaaierd naar Team Jeroen&, blijft Team 33 Vrienden van Berkel een fundament van de Roparun-community in Lansingerland."
     ];
 
-    function toonVijfFeitjes() {
+    function toonVierFeitjes() {
         const container = document.getElementById('fact-container');
         const shuffled = [...feitjes].sort(() => 0.5 - Math.random());
-        const selectie = shuffled.slice(0, 5);
+        const selectie = shuffled.slice(0, 4);
         container.innerHTML = selectie.map(f => `<span class="fact-item">${f}</span>`).join('');
     }
 
-    toonVijfFeitjes(); 
-    setInterval(toonVijfFeitjes, 600000); // Precies 10 minuten
+    toonVierFeitjes(); 
+    setInterval(toonVierFeitjes, 600000); // 10 minuten
 </script>
 
 <script>
