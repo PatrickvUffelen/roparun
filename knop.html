@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Online Status Knop</title>
+    <style>
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f9; font-family: sans-serif; }
+        #myButton { padding: 25px 50px; font-size: 1.4rem; font-weight: bold; cursor: pointer; border: none; border-radius: 12px; color: white; min-width: 380px; text-transform: uppercase; transition: background-color 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        
+        .green { background-color: #27ae60; }
+        .red { background-color: #c0392b; }
+        .loading { background-color: #bdc3c7; cursor: wait; }
+
+        .blink { animation: urgent-blink 0.4s infinite; }
+        @keyframes urgent-blink {
+            0% { background-color: #27ae60; box-shadow: 0 0 10px #27ae60; }
+            50% { background-color: #2ecc71; box-shadow: 0 0 30px #2ecc71; transform: scale(1.02); }
+            100% { background-color: #27ae60; }
+        }
+    </style>
+</head>
+<body>
+
+    <button id="myButton" class="loading">Laden...</button>
+
+    <script>
+        const btn = document.getElementById('myButton');
+        // Vervang 'unieke-naam-123' door iets unieks voor jouw project
+        const key = "mijn-verbinding-status-2024"; 
+        const url = `https://api.countapi.xyz/hit/mijnproject/${key}`;
+        const getUrl = `https://api.countapi.xyz/get/mijnproject/${key}`;
+
+        let currentStatus = "green";
+        let blinkActive = false;
+
+        // Functie om status op te halen (Even/Oneven getal bepaalt Rood/Groen)
+        async function checkStatus() {
+            try {
+                const response = await fetch(getUrl);
+                const data = await response.json();
+                // We gebruiken de 'value' van de teller. Is het even? Dan groen. Oneven? Dan rood.
+                const status = (data.value % 2 === 0) ? 'green' : 'red';
+                
+                if (status !== currentStatus) {
+                    currentStatus = status;
+                    updateVisuals(status);
+                }
+            } catch (e) {
+                // Als de key nog niet bestaat, maken we hem aan
+                fetch(url);
+            }
+        }
+
+        function updateVisuals(status) {
+            if (status === 'red') {
+                btn.className = 'red';
+                btn.textContent = 'Verbinding nog niet gereed';
+                blinkActive = false;
+            } else {
+                btn.className = 'green' + (blinkActive ? ' blink' : '');
+                btn.textContent = 'Verbinding gereed';
+            }
+        }
+
+        btn.addEventListener('click', async function() {
+            // Verhoog de teller op de API (switchen tussen even/oneven)
+            await fetch(url);
+            
+            if (currentStatus === 'red') { // We gaan naar groen
+                blinkActive = true;
+                setTimeout(() => {
+                    blinkActive = false;
+                    updateVisuals('green');
+                }, 10000);
+            }
+            
+            checkStatus();
+        });
+
+        // Elke 2 seconden checken (om de API niet te overbelasten)
+        setInterval(checkStatus, 2000);
+        checkStatus();
+    </script>
+</body>
+</html>
