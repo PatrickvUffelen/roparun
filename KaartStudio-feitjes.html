@@ -201,7 +201,7 @@
         "Tijdens de Roparun zijn teams ongeveer 48 uur onderweg met nauwelijks slaap.",
         "Sommige deelnemers krijgen onderweg last van hallucinaties door vermoeidheid.",
         "Een loper legt per beurt vaak maar een kilometers af voordat er weer gewisseld wordt.",
-        "Teams gebruiken vaak draaiboeken van tientallen pagina’s om alles te organiseren.",
+        "Teams gebruiken vaak draaiboeken van tientalten pagina’s om alles te organiseren.",
         "Er bestaan teams die al sinds de jaren negentig meedoen aan de Roparun.",
         "De karavaan van één team kan bestaan uit meerdere busjes, fietsen en ondersteuningswagens.",
         "In sommige dorpen verandert de Roparun-route tijdelijk in een feeststraat met muziek en waterpunten.",
@@ -255,6 +255,7 @@
     const db = firebase.database();
     const finishLatLng = L.latLng(51.922512, 4.478921);
     
+    // Start met een standaard view, wordt direct overschreven zodra route laadt
     const map = L.map('map', { zoomControl: false }).setView([51.5, 3.5], 8);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OSM' }).addTo(map);
 
@@ -310,10 +311,13 @@
 
     function loadRoute(url) {
         return fetch(url).then(res => res.json()).then(data => {
-            L.geoJSON(data, {
+            const routeLayer = L.geoJSON(data, {
                 filter: f => f.geometry.type !== 'Point',
                 style: f => ({ color: f.properties.stroke || '#0000FF', weight: 7, opacity: 0.8 })
             }).addTo(map);
+            
+            // ZOOM HIER IN OP DE VOLLEDIGE ROUTE
+            map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
         });
     }
 
