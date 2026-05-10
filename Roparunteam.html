@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Team 147 Data Only</title>
+    <style>
+        body { font-family: sans-serif; background: #222; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .data-container { text-align: center; border: 2px solid #e2007a; padding: 30px; border-radius: 20px; background: #333; }
+        .val { font-size: 48px; font-weight: bold; color: #e2007a; display: block; margin-bottom: 10px; }
+        .label { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #aaa; margin-bottom: 25px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="data-container">
+    <span class="label">Huidige Snelheid</span>
+    <span id="speed" class="val">--</span>
+    
+    <span class="label">Afgelegde Afstand</span>
+    <span id="dist" class="val">--</span>
+    
+    <span class="label">Nog te gaan</span>
+    <span id="rem" class="val">--</span>
+
+    <div id="status" style="font-size: 10px; color: #555; margin-top: 20px;">Laden...</div>
+</div>
+
+<script>
+    async function getRoparunData() {
+        const teamId = "147";
+        // Gebruik van een alternatieve proxy
+        const url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://www.roparunlive.nl/api/team-detail/' + teamId)}`;
+
+        try {
+            const response = await fetch(url);
+            const rawData = await response.json();
+            const data = JSON.parse(rawData.contents);
+
+            const speed = data.liveData.speed;
+            const covered = data.liveData.distanceCovered;
+            const total = data.liveData.distanceTotal;
+            const remaining = (total - covered).toFixed(1);
+
+            document.getElementById('speed').innerText = speed + " km/u";
+            document.getElementById('dist').innerText = covered + " km";
+            document.getElementById('rem').innerText = remaining + " km";
+            document.getElementById('status').innerText = "Laatste sync: " + new Date().toLocaleTimeString();
+        } catch (err) {
+            document.getElementById('status').innerText = "Beveiligingsblokkade: data kan niet live worden opgehaald.";
+            // Fallback naar de laatst bekende data die jij doorgaf
+            document.getElementById('speed').innerText = "12.0 km/u";
+            document.getElementById('dist').innerText = "542.0 km";
+            document.getElementById('rem').innerText = "20.4 km";
+        }
+    }
+
+    setInterval(getRoparunData, 60000);
+    getRoparunData();
+</script>
+
+</body>
+</html>
