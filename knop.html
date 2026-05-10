@@ -2,22 +2,48 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Status Monitor</title>
+    <title>Live Status Monitor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f9; font-family: sans-serif; margin: 0; }
-        #myButton { 
-            padding: 25px 50px; font-size: 1.4rem; font-weight: bold; cursor: pointer; border: none; 
-            border-radius: 12px; color: white; min-width: 380px; text-transform: uppercase; 
-            transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2); outline: none;
+        body { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background-color: #f4f4f9; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
         }
+        
+        #myButton { 
+            padding: 25px 50px; 
+            font-size: 1.4rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border: none; 
+            border-radius: 12px; 
+            color: white; 
+            min-width: 380px; 
+            text-transform: uppercase; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+            outline: none;
+            letter-spacing: 1px;
+        }
+
+        /* Statussen */
         .green { background-color: #27ae60; }
         .red { background-color: #c0392b; }
-        .loading { background-color: #7f8c8d; cursor: wait; opacity: 0.7; }
+        .loading { background-color: #7f8c8d; cursor: wait; opacity: 0.6; }
 
-        .blink { animation: urgent-blink 0.4s infinite; }
+        /* Opvallend flikkeren */
+        .blink { 
+            animation: urgent-blink 0.4s infinite; 
+        }
+
         @keyframes urgent-blink {
             0% { background-color: #27ae60; box-shadow: 0 0 10px #27ae60; }
-            50% { background-color: #2ecc71; box-shadow: 0 0 30px #2ecc71; transform: scale(1.02); }
+            50% { background-color: #2ecc71; box-shadow: 0 0 30px #2ecc71; transform: scale(1.03); }
             100% { background-color: #27ae60; }
         }
     </style>
@@ -26,84 +52,75 @@
 
     <button id="myButton" class="loading">Verbinding maken...</button>
 
-    <script>
-        const btn = document.getElementById('myButton');
-        
-        // Gebruik een unieke sleutel voor jouw project op GitHub
-        const namespace = "mijn-unieke-knop-2024";
-        const key = "status";
-        const apiUrl = `https://api.countapi.xyz/hit/${namespace}/${key}`;
-        const getUrl = `https://api.countapi.xyz/get/${namespace}/${key}`;
+    <script type="module">
+      // Firebase bibliotheken laden via CDN
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        let currentStatus = "";
-        let blinkActive = false;
+      // Jouw specifieke Firebase configuratie
+      const firebaseConfig = {
+        databaseURL: "https://audioknop-default-rtdb.europe-west1.firebasedatabase.app/"
+      };
 
-        async function updateStatus() {
-            try {
-                const response = await fetch(getUrl);
-                if (!response.ok) {
-                    // Als de sleutel nog niet bestaat, maken we hem aan door te 'hitten'
-                    await fetch(apiUrl);
-                    return;
-                }
-                const data = await response.json();
-                
-                // Even getal = Groen, Oneven getal = Rood
-                const status = (data.value % 2 === 0) ? 'green' : 'red';
-                
-                if (status !== currentStatus) {
-                    currentStatus = status;
-                    render(status);
-                }
-            } catch (error) {
-                console.error("Netwerkfout:", error);
-                // Forceer de knop uit de laadstand als de API niet reageert
-                if (currentStatus === "") {
-                    currentStatus = "green";
-                    render("green");
-                }
-            }
-        }
+      // Initialiseer Firebase
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      const statusRef = ref(db, 'verbinding_status');
 
-        function render(status) {
-            btn.classList.remove('loading');
-            if (status === 'red') {
-                btn.className = 'red';
-                btn.textContent = 'Verbinding nog niet gereed';
-                blinkActive = false;
-            } else {
-                btn.className = 'green' + (blinkActive ? ' blink' : '');
-                btn.textContent = 'Verbinding gereed';
-            }
-        }
+      const btn = document.getElementById('myButton');
+      let currentStatus = "";
+      let blinkActive = false;
+      let blinkTimeout;
 
-        btn.addEventListener('click', async function() {
-            if (btn.classList.contains('loading')) return;
+      // LUISTEREN: Update de knop als de database verandert
+      onValue(statusRef, (snapshot) => {
+          const status = snapshot.val();
+          
+          // Als de database nog helemaal leeg is, zet hem op groen
+          if (status === null) {
+              set(statusRef, "green");
+              return;
+          }
 
-            // Als we van rood naar groen gaan, start het knipperen
-            if (currentStatus === 'red') {
-                blinkActive = true;
-                setTimeout(() => {
-                    blinkActive = false;
-                    render('green');
-                }, 10000);
-            }
+          currentStatus = status;
+          btn.classList.remove('loading');
+          updateVisuals(status);
+      }, (error) => {
+          console.error("Firebase fout:", error);
+          btn.textContent = "Regels niet op Testmodus?";
+      });
 
-            // Stuur update naar server
-            btn.classList.add('loading');
-            try {
-                await fetch(apiUrl);
-                await updateStatus();
-            } catch (e) {
-                // Fallback voor als internet even hapert
-                currentStatus = (currentStatus === 'green') ? 'red' : 'green';
-                render(currentStatus);
-            }
-        });
+      function updateVisuals(status) {
+          if (status === 'red') {
+              btn.className = 'red';
+              btn.textContent = 'Verbinding nog niet gereed';
+              blinkActive = false;
+              clearTimeout(blinkTimeout);
+          } else {
+              btn.className = 'green' + (blinkActive ? ' blink' : '');
+              btn.textContent = 'Verbinding gereed';
+          }
+      }
 
-        // Elke 2 seconden checken op updates van anderen
-        setInterval(updateStatus, 2000);
-        updateStatus();
+      // KLIKKEN: Wissel de status in de database
+      btn.addEventListener('click', () => {
+          if (btn.classList.contains('loading')) return;
+
+          const nextStatus = (currentStatus === 'green') ? 'red' : 'green';
+
+          // Als we naar groen gaan, start de 10 seconden timer voor het flikkeren
+          if (nextStatus === 'green') {
+              blinkActive = true;
+              updateVisuals('green');
+              blinkTimeout = setTimeout(() => {
+                  blinkActive = false;
+                  updateVisuals('green');
+              }, 10000);
+          }
+
+          // Update de database (dit triggert onValue voor iedereen)
+          set(statusRef, nextStatus);
+      });
     </script>
 </body>
 </html>
