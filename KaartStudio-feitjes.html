@@ -57,6 +57,7 @@
         .weather-info { color: #0277bd; }
         
         .update-tag { font-size: 13px; color: #888; font-weight: 600; display: block; margin-top: -5px; margin-bottom: 12px; }
+        .refresh-note { font-size: 11px; color: #999; font-weight: 600; display: block; margin-top: -12px; margin-bottom: 15px; }
         
         .forecast-container { margin-bottom: 25px; }
         .forecast-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
@@ -69,8 +70,7 @@
         .rustpunten-list { list-style: none; padding: 0; margin: 5px 0 0 37px; font-size: 13px; color: #555; }
         .country-tag { font-size: 10px; color: #3a861d; font-weight: 800; text-transform: uppercase; display: block; }
 
-        /* Stijl voor de feitjes lijst */
-        .fact-item { font-size: 14px; font-weight: 600; color: #333; line-height: 1.4; display: block; padding: 8px 0; }
+        .fact-item { font-size: 14px; font-weight: 600; color: #333; line-height: 1.4; display: block; padding: 10px 0; }
         .fact-item:not(:last-child) { border-bottom: 1px solid #eee; }
     </style>
 </head>
@@ -84,8 +84,9 @@
     <button id="myButton" class="loading">Verbinding maken...</button>
 
     <div class="legend-title" style="margin-top: 30px;">Wist je dat?</div>
+    <span class="refresh-note">Iedere 10 minuten andere weetjes</span>
     <div class="live-info-container" id="fact-container">
-        <!-- Hier komen de 4 feitjes -->
+        <!-- Hier komen de 5 feitjes -->
     </div>
 </div>
 
@@ -148,14 +149,12 @@
 
     onValue(rootRef, (snapshot) => {
         const data = snapshot.val();
-        if (!data) {
-            set(rootRef, { verbinding_status: "green", is_blinking: false });
-            return;
+        if (data) {
+            currentStatus = data.verbinding_status;
+            isBlinking = data.is_blinking;
+            btn.classList.remove('loading');
+            updateVisuals(currentStatus, isBlinking);
         }
-        currentStatus = data.verbinding_status;
-        isBlinking = data.is_blinking;
-        btn.classList.remove('loading');
-        updateVisuals(currentStatus, isBlinking);
     });
 
     function updateVisuals(status, blinking) {
@@ -174,15 +173,12 @@
         if (nextStatus === 'green') {
             update(rootRef, { verbinding_status: "green", is_blinking: true });
             clearTimeout(blinkTimeout);
-            blinkTimeout = setTimeout(() => {
-                update(rootRef, { is_blinking: false });
-            }, 15000); 
+            blinkTimeout = setTimeout(() => { update(rootRef, { is_blinking: false }); }, 15000); 
         } else {
             update(rootRef, { verbinding_status: "red", is_blinking: false });
         }
     });
 
-    // --- Geüpdatete Roparun Feitjes Lijst ---
     const feitjes = [
         "De Roparun is een estafetteloop van ruim 500 kilometer.",
         "De naam Roparun staat voor Rotterdam-Parijs-Run.",
@@ -229,19 +225,18 @@
         "Hoewel een deel van de lopers inmiddels is uitgewaaierd naar Team Jeroen&, blijft Team 33 Vrienden van Berkel een fundament van de Roparun-community in Lansingerland."
     ];
 
-    function toonVierFeitjes() {
+    function toonVijfFeitjes() {
         const container = document.getElementById('fact-container');
         const shuffled = [...feitjes].sort(() => 0.5 - Math.random());
-        const selectie = shuffled.slice(0, 4);
+        const selectie = shuffled.slice(0, 5);
         container.innerHTML = selectie.map(f => `<span class="fact-item">${f}</span>`).join('');
     }
 
-    toonVierFeitjes(); 
-    setInterval(toonVierFeitjes, 300000); 
+    toonVijfFeitjes(); 
+    setInterval(toonVijfFeitjes, 600000); // Precies 10 minuten
 </script>
 
 <script>
-    // --- Kaart & UI Logica ---
     function toggleMenu(menuId, e) {
         if(e) e.stopPropagation();
         const menu = document.getElementById(menuId);
@@ -264,9 +259,9 @@
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OSM' }).addTo(map);
 
     var homeIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1946/1946436.png', iconSize: [40, 40], iconAnchor: [20, 40] });
-    L.marker([50.7715, 3.8785], {icon: homeIcon}).addTo(map).bindPopup('Geraardsbergen (BE)');
-    L.marker([49.6896, 3.2422], {icon: homeIcon}).addTo(map).bindPopup('Frières-Faillouël (FR)');
-    L.marker([51.5004, 4.2694], {icon: homeIcon}).addTo(map).bindPopup('Bergen op Zoom (NL)');
+    L.marker([50.7715, 3.8785], {icon: homeIcon}).addTo(map);
+    L.marker([49.6896, 3.2422], {icon: homeIcon}).addTo(map);
+    L.marker([51.5004, 4.2694], {icon: homeIcon}).addTo(map);
 
     var finishIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/4744/4744812.png', iconSize: [60, 60], iconAnchor: [10, 60] });
     L.marker(finishLatLng, {icon: finishIcon}).addTo(map);
@@ -276,13 +271,6 @@
 
     let lastLat = 0, lastLng = 0;
 
-    function getWeatherDesc(code) {
-        if (code === 0) return "Helder";
-        if (code <= 3) return "Bewolkt";
-        if (code >= 51 && code <= 67) return "Regen";
-        return "Wisselend";
-    }
-
     async function updateExtraInfo(lat, lng) {
         try {
             const resAddr = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
@@ -291,7 +279,7 @@
             
             const resWeather = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&hourly=temperature_2m,weathercode`);
             const data = await resWeather.json();
-            document.getElementById('weather-text').innerText = `${Math.round(data.current_weather.temperature)}°C - ${getWeatherDesc(data.current_weather.weathercode)}`;
+            document.getElementById('weather-text').innerText = `${Math.round(data.current_weather.temperature)}°C`;
             
             const forecastList = document.getElementById('forecast-list');
             forecastList.innerHTML = '';
@@ -311,7 +299,7 @@
             busMarker.setLatLng(currentPos);
             if (data.lat !== lastLat || data.lng !== lastLng) {
                 const nu = new Date();
-                document.getElementById('last-update-text').innerText = "Laatste beweging: " + nu.toLocaleTimeString();
+                document.getElementById('last-update-text').innerText = "Laatste beweging: " + nu.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 updateExtraInfo(data.lat, data.lng);
                 lastLat = data.lat; lastLng = data.lng;
             }
@@ -322,11 +310,10 @@
 
     function loadRoute(url) {
         return fetch(url).then(res => res.json()).then(data => {
-            const routeLayer = L.geoJSON(data, {
+            L.geoJSON(data, {
                 filter: f => f.geometry.type !== 'Point',
-                style: f => ({ color: f.properties.stroke || '#0000FF', weight: 7, opacity: 0.8, lineJoin: 'round' })
+                style: f => ({ color: f.properties.stroke || '#0000FF', weight: 7, opacity: 0.8 })
             }).addTo(map);
-            map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
         });
     }
 
