@@ -55,10 +55,13 @@
         .live-label { font-size: 11px; text-transform: uppercase; color: #666; font-weight: 700; display: block; }
         .live-data { font-size: 18px; font-weight: 800; color: #000; display: block; margin-bottom: 8px; }
         .weather-info { color: #0277bd; }
+        .update-tag { font-size: 12px; color: #888; font-style: italic; }
+        
         .forecast-container { margin-bottom: 25px; }
         .forecast-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
         .forecast-time { font-weight: 700; color: #444; }
         .forecast-temp { font-weight: 800; color: #0277bd; }
+        
         .legend-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; border-bottom: 2px solid #3a861d; padding-bottom: 5px; margin-top: 10px; }
         .legend-item { display: flex; align-items: center; margin-bottom: 12px; font-weight: 600; font-size: 14px; }
         .legend-icon { width: 25px; height: 25px; margin-right: 12px; object-fit: contain; }
@@ -87,6 +90,9 @@
         <span id="distance-text" class="live-data">Berekenen...</span>
         <span class="live-label">Actueel weer:</span>
         <span id="weather-text" class="live-data weather-info">Laden...</span>
+        <hr style="border:0; border-top:1px solid #eee; margin: 10px 0;">
+        <span class="live-label">Laatste update:</span>
+        <span id="last-update-text" class="update-tag">Nog geen data</span>
     </div>
 
     <div class="forecast-container">
@@ -106,9 +112,9 @@
         <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="legend-icon"> Rustpunten:
     </div>
     <ul class="rustpunten-list">
-        <li><span class="country-tag">Frankrijk</span><b>Frières-Faillouël</b><br>Rue de Philadelphie</li>
-        <li><span class="country-tag">België</span><b>Geraardsbergen</b><br>Karmelietenstraat</li>
-        <li><span class="country-tag">Nederland</span><b>Bergen op Zoom</b><br>De Schelp</li>
+        <li><span class="country-tag">Frankrijk</span><b>Frières-Faillouël</b></li>
+        <li><span class="country-tag">België</span><b>Geraardsbergen</b></li>
+        <li><span class="country-tag">Nederland</span><b>Bergen op Zoom</b></li>
     </ul>
 </div>
 
@@ -133,17 +139,14 @@
     let isBlinking = false;
     let blinkTimeout;
 
-    // LUISTEREN: Luister naar de hele root voor status én blink info
     onValue(rootRef, (snapshot) => {
         const data = snapshot.val();
         if (!data) {
             set(rootRef, { verbinding_status: "green", is_blinking: false });
             return;
         }
-
         currentStatus = data.verbinding_status;
         isBlinking = data.is_blinking;
-        
         btn.classList.remove('loading');
         updateVisuals(currentStatus, isBlinking);
     });
@@ -153,7 +156,6 @@
             btn.className = 'red';
             btn.textContent = 'Verbinding nog niet gereed';
         } else {
-            // Voeg de blink klasse toe als de database zegt dat we moeten knipperen
             btn.className = 'green' + (blinking ? ' blink' : '');
             btn.textContent = 'Verbinding gereed';
         }
@@ -161,27 +163,15 @@
 
     btn.addEventListener('click', () => {
         if (btn.classList.contains('loading')) return;
-
         const nextStatus = (currentStatus === 'green') ? 'red' : 'green';
-        
         if (nextStatus === 'green') {
-            // 1. Zet status op groen EN zet knipperen AAN in database voor iedereen
-            update(rootRef, {
-                verbinding_status: "green",
-                is_blinking: true
-            });
-
-            // 2. Start timer om knipperen na 10 sec UIT te zetten in database
+            update(rootRef, { verbinding_status: "green", is_blinking: true });
             clearTimeout(blinkTimeout);
             blinkTimeout = setTimeout(() => {
                 update(rootRef, { is_blinking: false });
-            }, 10000);
+            }, 15000); 
         } else {
-            // Als we naar rood gaan, zetten we knipperen direct uit
-            update(rootRef, {
-                verbinding_status: "red",
-                is_blinking: false
-            });
+            update(rootRef, { verbinding_status: "red", is_blinking: false });
         }
     });
 </script>
@@ -211,9 +201,9 @@
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OSM' }).addTo(map);
 
     var homeIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1946/1946436.png', iconSize: [40, 40], iconAnchor: [20, 40] });
-    L.marker([50.7715, 3.8785], {icon: homeIcon}).addTo(map).bindPopup('<b>Geraardsbergen (BE)</b>');
-    L.marker([49.6896, 3.2422], {icon: homeIcon}).addTo(map).bindPopup('<b>Frières-Faillouël (FR)</b>');
-    L.marker([51.5004, 4.2694], {icon: homeIcon}).addTo(map).bindPopup('<b>Bergen op Zoom (NL)</b>');
+    L.marker([50.7715, 3.8785], {icon: homeIcon}).addTo(map).bindPopup('Geraardsbergen (BE)');
+    L.marker([49.6896, 3.2422], {icon: homeIcon}).addTo(map).bindPopup('Frières-Faillouël (FR)');
+    L.marker([51.5004, 4.2694], {icon: homeIcon}).addTo(map).bindPopup('Bergen op Zoom (NL)');
 
     var finishIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/4744/4744812.png', iconSize: [60, 60], iconAnchor: [10, 60] });
     L.marker(finishLatLng, {icon: finishIcon}).addTo(map);
@@ -232,7 +222,7 @@
         try {
             const resAddr = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
             const dataAddr = await resAddr.json();
-            document.getElementById('location-text').innerText = dataAddr.address.city || dataAddr.address.town || "Onderweg...";
+            document.getElementById('location-text').innerText = dataAddr.address.city || dataAddr.address.town || dataAddr.address.village || "Onderweg...";
             
             const resWeather = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&hourly=temperature_2m,weathercode`);
             const data = await resWeather.json();
@@ -249,14 +239,22 @@
         } catch (e) {}
     }
 
+    // BUS DATA UPDATE LOOP
     db.ref("bus").on("value", function(snapshot) {
         var data = snapshot.val();
         if(data && data.lat && data.lng){
             var currentPos = L.latLng(data.lat, data.lng);
             busMarker.setLatLng(currentPos);
             updateExtraInfo(data.lat, data.lng);
+            
+            // Afstand berekenen
             var distance = (currentPos.distanceTo(finishLatLng) / 1000).toFixed(1);
             document.getElementById('distance-text').innerText = distance + " km";
+            
+            // TIJD UPDATE TOEVOEGEN
+            const nu = new Date();
+            const tijdString = nu.getHours().toString().padStart(2, '0') + ":" + nu.getMinutes().toString().padStart(2, '0') + ":" + nu.getSeconds().toString().padStart(2, '0');
+            document.getElementById('last-update-text').innerText = tijdString;
         }
     });
 
