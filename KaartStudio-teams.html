@@ -38,7 +38,7 @@
             cursor: pointer; border: none; border-radius: 12px; color: white; 
             text-transform: uppercase; transition: all 0.3s ease; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.2); outline: none; letter-spacing: 1px;
-            margin-top: 15px;
+            margin-top: 5px;
         }
         .green { background-color: #27ae60; }
         .red { background-color: #c0392b; }
@@ -52,12 +52,10 @@
         .blink { animation: urgent-blink 0.4s infinite; }
 
         .live-info-container { background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 5px solid #3a861d; margin-bottom: 20px; }
-        /* Specifieke container voor Team 147 met roze rand */
         .team-container { border-left: 5px solid #e2007a; }
         
         .live-label { font-size: 11px; text-transform: uppercase; color: #666; font-weight: 700; display: block; }
         .live-data { font-size: 18px; font-weight: 800; color: #000; display: block; margin-bottom: 8px; }
-        /* Specifieke kleur voor Team data */
         .team-data { color: #e2007a; }
         
         .weather-info { color: #0277bd; }
@@ -81,8 +79,13 @@
 
 <!-- LINKER MENU -->
 <div id="sideMenuLeft" class="side-menu">
+    <div class="legend-title">Status videoverbinding</div>
+    <div class="live-info-container">
+        <span class="live-label">Stream status:</span>
+        <button id="myButton" class="loading">Verbinding maken...</button>
+    </div>
+
     <div class="legend-title">Team 147 Statistieken</div>
-    
     <div class="live-info-container team-container">
         <span class="live-label">Huidige Snelheid:</span>
         <span id="speed" class="live-data team-data">-- km/u</span>
@@ -95,9 +98,6 @@
         
         <span id="team-sync-status" class="update-tag" style="font-size: 10px;">Laden...</span>
     </div>
-
-    <div class="legend-title">Status videoverbinding</div>
-    <button id="myButton" class="loading">Verbinding maken...</button>
 </div>
 
 <!-- RECHTER MENU -->
@@ -141,7 +141,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Team 147 Data Script -->
+<!-- Team 147 API Script (Auto-update elke 60 sec) -->
 <script>
     async function getRoparunData() {
         const teamId = "147";
@@ -162,25 +162,23 @@
             document.getElementById('rem').innerText = remaining + " km";
             document.getElementById('team-sync-status').innerText = "Laatste sync: " + new Date().toLocaleTimeString();
         } catch (err) {
-            document.getElementById('team-sync-status').innerText = "Fallback data actief";
+            document.getElementById('team-sync-status').innerText = "Update mislukt (gebruik fallback)";
             document.getElementById('speed').innerText = "12.0 km/u";
             document.getElementById('dist').innerText = "542.0 km";
             document.getElementById('rem').innerText = "20.4 km";
         }
     }
+    // Start cyclus en voer direct de eerste keer uit
     setInterval(getRoparunData, 60000);
     getRoparunData();
 </script>
 
-<!-- Rest van de originele scripts (Firebase & Leaflet) -->
+<!-- Firebase Status Script -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const statusFirebaseConfig = {
-        databaseURL: "https://audioknop-default-rtdb.europe-west1.firebasedatabase.app/"
-    };
-
+    const statusFirebaseConfig = { databaseURL: "https://audioknop-default-rtdb.europe-west1.firebasedatabase.app/" };
     const statusApp = initializeApp(statusFirebaseConfig, "statusMonitor");
     const statusDb = getDatabase(statusApp);
     const rootRef = ref(statusDb, '/');
@@ -192,10 +190,7 @@
 
     onValue(rootRef, (snapshot) => {
         const data = snapshot.val();
-        if (!data) {
-            set(rootRef, { verbinding_status: "green", is_blinking: false });
-            return;
-        }
+        if (!data) return;
         currentStatus = data.verbinding_status;
         isBlinking = data.is_blinking;
         btn.classList.remove('loading');
@@ -205,10 +200,10 @@
     function updateVisuals(status, blinking) {
         if (status === 'red') {
             btn.className = 'red';
-            btn.textContent = 'Verbinding nog niet gereed';
+            btn.textContent = 'Niet gereed';
         } else {
             btn.className = 'green' + (blinking ? ' blink' : '');
-            btn.textContent = 'Verbinding gereed';
+            btn.textContent = 'Gereed';
         }
     }
 
@@ -218,20 +213,18 @@
         if (nextStatus === 'green') {
             update(rootRef, { verbinding_status: "green", is_blinking: true });
             clearTimeout(blinkTimeout);
-            blinkTimeout = setTimeout(() => {
-                update(rootRef, { is_blinking: false });
-            }, 15000); 
+            blinkTimeout = setTimeout(() => { update(rootRef, { is_blinking: false }); }, 15000); 
         } else {
             update(rootRef, { verbinding_status: "red", is_blinking: false });
         }
     });
 </script>
 
+<!-- Kaart Script -->
 <script>
     function toggleMenu(menuId, e) {
         if(e) e.stopPropagation();
-        const menu = document.getElementById(menuId);
-        menu.classList.toggle('open');
+        document.getElementById(menuId).classList.toggle('open');
     }
 
     const firebaseConfig = {
@@ -262,25 +255,17 @@
     var busIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png', iconSize: [80, 80], iconAnchor: [40, 80] });
     var busMarker = L.marker([0, 0], {icon: busIcon}).addTo(map);
 
-    let lastLat = 0;
-    let lastLng = 0;
-
-    function getWeatherDesc(code) {
-        if (code === 0) return "Helder";
-        if (code <= 3) return "Bewolkt";
-        if (code >= 51 && code <= 67) return "Regen";
-        return "Wisselend";
-    }
+    let lastLat = 0, lastLng = 0;
 
     async function updateExtraInfo(lat, lng) {
         try {
             const resAddr = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
             const dataAddr = await resAddr.json();
-            document.getElementById('location-text').innerText = dataAddr.address.city || dataAddr.address.town || dataAddr.address.village || "Onderweg...";
+            document.getElementById('location-text').innerText = dataAddr.address.city || dataAddr.address.town || "Onderweg...";
             
             const resWeather = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&hourly=temperature_2m,weathercode`);
             const data = await resWeather.json();
-            document.getElementById('weather-text').innerText = `${Math.round(data.current_weather.temperature)}°C - ${getWeatherDesc(data.current_weather.weathercode)}`;
+            document.getElementById('weather-text').innerText = `${Math.round(data.current_weather.temperature)}°C`;
             
             const forecastList = document.getElementById('forecast-list');
             forecastList.innerHTML = '';
@@ -298,36 +283,23 @@
         if(data && data.lat && data.lng){
             var currentPos = L.latLng(data.lat, data.lng);
             busMarker.setLatLng(currentPos);
-
             if (data.lat !== lastLat || data.lng !== lastLng) {
-                const nu = new Date();
-                const tijdString = nu.getHours().toString().padStart(2, '0') + ":" + 
-                                   nu.getMinutes().toString().padStart(2, '0') + ":" + 
-                                   nu.getSeconds().toString().padStart(2, '0');
-                document.getElementById('last-update-text').innerText = "Laatste beweging: " + tijdString;
-                
+                document.getElementById('last-update-text').innerText = "Update: " + new Date().toLocaleTimeString();
                 updateExtraInfo(data.lat, data.lng);
-                
-                lastLat = data.lat;
-                lastLng = data.lng;
+                lastLat = data.lat; lastLng = data.lng;
             }
-            
             var distance = (currentPos.distanceTo(finishLatLng) / 1000).toFixed(1);
             document.getElementById('distance-text').innerText = distance + " km";
         }
     });
 
-    function loadRoute(url) {
-        return fetch(url).then(res => res.json()).then(data => {
-            const routeLayer = L.geoJSON(data, {
-                filter: f => f.geometry.type !== 'Point',
-                style: f => ({ color: f.properties.stroke || '#0000FF', weight: 7, opacity: 0.8, lineJoin: 'round' })
-            }).addTo(map);
-            map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
-        });
-    }
-
-    loadRoute('https://patrickvuffelen.github.io/roparun/map.geojson');
+    fetch('https://patrickvuffelen.github.io/roparun/map.geojson').then(res => res.json()).then(data => {
+        const routeLayer = L.geoJSON(data, {
+            filter: f => f.geometry.type !== 'Point',
+            style: f => ({ color: f.properties.stroke || '#0000FF', weight: 7, opacity: 0.8, lineJoin: 'round' })
+        }).addTo(map);
+        map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+    });
 </script>
 
 </body>
