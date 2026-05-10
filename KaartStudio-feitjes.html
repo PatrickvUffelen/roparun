@@ -60,8 +60,6 @@
         
         .forecast-container { margin-bottom: 25px; }
         .forecast-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
-        .forecast-time { font-weight: 700; color: #444; }
-        .forecast-temp { font-weight: 800; color: #0277bd; }
         
         .legend-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; border-bottom: 2px solid #3a861d; padding-bottom: 5px; margin-top: 10px; }
         .legend-item { display: flex; align-items: center; margin-bottom: 12px; font-weight: 600; font-size: 14px; }
@@ -71,8 +69,9 @@
         .rustpunten-list { list-style: none; padding: 0; margin: 5px 0 0 37px; font-size: 13px; color: #555; }
         .country-tag { font-size: 10px; color: #3a861d; font-weight: 800; text-transform: uppercase; display: block; }
 
-        /* Stijl voor de feitjesbox in het linker menu */
-        #fact-data { font-size: 15px; font-weight: 600; color: #333; line-height: 1.4; display: block; }
+        /* Stijl voor de feitjes lijst */
+        .fact-item { font-size: 14px; font-weight: 600; color: #333; line-height: 1.4; display: block; padding: 8px 0; }
+        .fact-item:not(:last-child) { border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
@@ -85,8 +84,8 @@
     <button id="myButton" class="loading">Verbinding maken...</button>
 
     <div class="legend-title" style="margin-top: 30px;">Wist je dat?</div>
-    <div class="live-info-container">
-        <span id="fact-data">Laden...</span>
+    <div class="live-info-container" id="fact-container">
+        <!-- Hier komen de 4 feitjes -->
     </div>
 </div>
 
@@ -183,7 +182,7 @@
         }
     });
 
-    // --- Roparun Feitjes Logica ---
+    // --- Roparun Feitjes Logica (4 feitjes) ---
     const feitjes = [
         "De Roparun is een estafetteloop van ruim 500 kilometer.",
         "De naam Roparun staat voor Rotterdam-Parijs-Run.",
@@ -205,16 +204,21 @@
         "Dit jaar bestaat de Roparun 35 jaar"
     ];
 
-    function toonNieuwFeitje() {
-        const index = Math.floor(Math.random() * feitjes.length);
-        document.getElementById('fact-data').innerText = feitjes[index];
+    function toonVierFeitjes() {
+        const container = document.getElementById('fact-container');
+        // Kopieer en schud de lijst om 4 unieke feitjes te pakken
+        const shuffled = [...feitjes].sort(() => 0.5 - Math.random());
+        const selectie = shuffled.slice(0, 4);
+        
+        container.innerHTML = selectie.map(f => `<span class="fact-item">${f}</span>`).join('');
     }
 
-    toonNieuwFeitje(); // Eerste feitje direct tonen
-    setInterval(toonNieuwFeitje, 300000); // Elke 5 minuten (300.000 ms)
+    toonVierFeitjes(); 
+    setInterval(toonVierFeitjes, 300000); // Elke 5 minuten verversen
 </script>
 
 <script>
+    // --- Rest van je originele Map Logica ---
     function toggleMenu(menuId, e) {
         if(e) e.stopPropagation();
         const menu = document.getElementById(menuId);
@@ -226,8 +230,6 @@
         authDomain: "roparun-tracker.firebaseapp.com",
         databaseURL: "https://roparun-tracker-default-rtdb.europe-west1.firebasedatabase.app",
         projectId: "roparun-tracker",
-        storageBucket: "roparun-tracker.firebasestorage.app",
-        messagingSenderId: "1066019618899",
         appId: "1:1066019618899:web:c6fe8e0b313e88912306a6"
     };
 
@@ -249,8 +251,7 @@
     var busIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png', iconSize: [80, 80], iconAnchor: [40, 80] });
     var busMarker = L.marker([0, 0], {icon: busIcon}).addTo(map);
 
-    let lastLat = 0;
-    let lastLng = 0;
+    let lastLat = 0, lastLng = 0;
 
     function getWeatherDesc(code) {
         if (code === 0) return "Helder";
@@ -285,20 +286,12 @@
         if(data && data.lat && data.lng){
             var currentPos = L.latLng(data.lat, data.lng);
             busMarker.setLatLng(currentPos);
-
             if (data.lat !== lastLat || data.lng !== lastLng) {
                 const nu = new Date();
-                const tijdString = nu.getHours().toString().padStart(2, '0') + ":" + 
-                                   nu.getMinutes().toString().padStart(2, '0') + ":" + 
-                                   nu.getSeconds().toString().padStart(2, '0');
-                document.getElementById('last-update-text').innerText = "Laatste beweging: " + tijdString;
-                
+                document.getElementById('last-update-text').innerText = "Laatste beweging: " + nu.toLocaleTimeString();
                 updateExtraInfo(data.lat, data.lng);
-                
-                lastLat = data.lat;
-                lastLng = data.lng;
+                lastLat = data.lat; lastLng = data.lng;
             }
-            
             var distance = (currentPos.distanceTo(finishLatLng) / 1000).toFixed(1);
             document.getElementById('distance-text').innerText = distance + " km";
         }
